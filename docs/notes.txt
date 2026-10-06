@@ -1,0 +1,22 @@
+5.1.20 Ensure sshd PermitRootLogin is disabled
+PermitRootLogin określa czy root może się zalogować przez ssh i defaultowo jest prohibit-password
+Zablokowanie wymusza uwierzytelnianie za pomocą własnych kont i dopiero uzyskiwanie uprawnień roota
+Dzięki temu można przypisać działania do konkretnej osoby podczas incydentu
+
+Ubuntu działa w trybie socket activation - startuje tylko jak ktoś się połączy
+sudo systemctl start ssh
+
+vboxuser@ESOPROJECT:~$ sudo sshd -T | grep permitrootlogin
+[sudo] password for vboxuser:
+permitrootlogin without-password
+
+sshd -T - ostateczna konfiguracja której serwer używa
+
+harden musi mieć restart połączenia, ponieważ program czyta conf tylko raz przy uruchomieniu
+
+Po uruchomieniu harden.sh
+PermitRootLogin jest wyłączone (zgodnie z wymaganiami CIS)
+
+Test funkcjonalny (zwykły użytkownik nadal może się zalogować)
+$ ssh cisvm 'echo OK'
+OK
