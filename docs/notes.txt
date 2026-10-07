@@ -1,3 +1,7 @@
+Nazwa komputera jest do zmiany kolego!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 5.1.20 Ensure sshd PermitRootLogin is disabled
 PermitRootLogin określa czy root może się zalogować przez ssh i defaultowo jest prohibit-password
 Zablokowanie wymusza uwierzytelnianie za pomocą własnych kont i dopiero uzyskiwanie uprawnień roota
@@ -20,3 +24,24 @@ PermitRootLogin jest wyłączone (zgodnie z wymaganiami CIS)
 Test funkcjonalny (zwykły użytkownik nadal może się zalogować)
 $ ssh cisvm 'echo OK'
 OK
+
+
+5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
+MaxAuthTries okresla ilosć max prób autentykacji per połączenie. Kiedy login failure będzie w połowie error będzie w pliku syslog
+Po ustawieniu MaxAuthTries na niską liczbę minimalizuje się ryzyko brute forca na ssh server
+
+Audit:
+vboxuser@ESOPROJECT:~$ sudo sshd -T | grep maxauthtries
+[sudo] password for vboxuser:
+maxauthtries 6
+
+po uruchomieniu harden
+MaxAuthTries jest ustawione na 4 (zgodnie z wymaganiami CIS)
+
+Test
+$ ssh -o BatchMode=yes -o IdentitiesOnly=yes \
+  -i ~/cis-zle-klucze/zly1 -i ~/cis-zle-klucze/zly2 \
+  -i ~/cis-zle-klucze/zly3 -i ~/cis-zle-klucze/zly4 \
+  cisvm 'echo OK'
+Received disconnect from 127.0.0.1 port 2222:2: Too many authentication failures
+Disconnected from 127.0.0.1 port 2222

@@ -9,6 +9,10 @@ fi
 
 echo "permitrootlogin no" > /etc/ssh/sshd_config.d/00-cis.conf 
 
+# 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
+
+echo "maxauthtries 4" > /etc/ssh/sshd_config.d/00-cis.conf
+
 if sshd -t; then
   systemctl restart ssh
 else

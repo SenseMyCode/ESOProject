@@ -35,8 +35,32 @@ fi
 
 ssh -t "$VM" 'sudo rm -f /root/.ssh/authorized_keys'
 
+# 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
+
+KLUCZE="$(dirname "$0")/cis-zle-klucze"
+mkdir -p "$KLUCZE"
+for i in 1 2 3 4; do
+    if [[ ! -f "$KLUCZE/zly$i" ]]; then
+        ssh-keygen -t ed25519 -N "" -q -f "$KLUCZE/zly$i"
+    fi
+done
+
+wynik=$(ssh -o BatchMode=yes -o ConnectTimeout=5 -o IdentitiesOnly=yes -i "$KLUCZE/zly1" -i "$KLUCZE/zly2" -i "$KLUCZE/zly3" -i "$KLUCZE/zly4" "$VM" 'echo OK' 2>&1)
+if echo "$wynik" | grep -q 'Too many authentication failures'; then
+    echo "OK: MaxAuthTries działa poprawnie"
+    ok=$((ok + 1))
+elif echo "$wynik" | grep -q '^OK$'; then
+    echo "FAIL: MaxAuthTries nie działa poprawnie"
+    fail=$((fail + 1))
+else
+    echo "FAIL: Błąd testu: $wynik"
+    fail=$((fail + 1))
+fi
+
 
 # Wynik testów
 
 echo "Wynik: $ok OK, $fail FAIL"
 [ "$fail" -eq 0 ]
+
+
