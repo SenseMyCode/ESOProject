@@ -6,12 +6,17 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 # 5.1.20 Ensure sshd PermitRootLogin is disabled
-
-echo "permitrootlogin no" > /etc/ssh/sshd_config.d/00-cis.conf 
-
 # 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
+# 5.1.7 Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured (Automated)
 
-echo "maxauthtries 4" > /etc/ssh/sshd_config.d/00-cis.conf
+
+cat > /etc/ssh/sshd_config.d/00-cis.conf <<EOF || exit 1
+PermitRootLogin no
+MaxAuthTries 4
+ClientAliveInterval 15
+ClientAliveCountMax 3
+EOF
+
 
 if sshd -t; then
   systemctl restart ssh

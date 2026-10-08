@@ -30,4 +30,26 @@ else
   echo "MaxAuthTries ma wartość $max_auth_tries_value (niezgodne z wymaganiami CIS)"
 fi
 
+# 5.1.7 Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured (Automated)
+
+max_punkty=$((max_punkty + 2))
+
+client_alive_interval=$(sshd -T | grep -i "^clientaliveinterval" | awk '{print $2}')
+if [[ "$client_alive_interval" -gt 0 ]]; then
+  echo "ClientAliveInterval jest ustawione na $client_alive_interval (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "ClientAliveInterval ma wartość $client_alive_interval (niezgodne z wymaganiami CIS)"
+fi
+
+max_punkty=$((max_punkty + 2))
+
+client_alive_count_max=$(sshd -T | grep -i "^clientalivecountmax" | awk '{print $2}')
+if [[ "$client_alive_count_max" -gt 0 ]]; then
+  echo "ClientAliveCountMax jest ustawione na $client_alive_count_max (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "ClientAliveCountMax ma wartość $client_alive_count_max (niezgodne z wymaganiami CIS)"
+fi
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

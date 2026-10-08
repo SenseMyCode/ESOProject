@@ -57,6 +57,15 @@ else
     fail=$((fail + 1))
 fi
 
+# 5.1.7 Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured (Automated)
+if ssh -o BatchMode=yes "$VM" 'sleep 50; echo OK' 2>/dev/null | grep -q '^OK$'; then
+    echo "OK: Bezczynna sesja SSH przetrwała 50 s"
+    ok=$((ok + 1))
+else
+    echo "FAIL: Bezczynna sesja SSH została zerwana"
+    fail=$((fail + 1))
+fi
+
 
 # Wynik testów
 

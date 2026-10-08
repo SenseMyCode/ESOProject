@@ -26,6 +26,8 @@ $ ssh cisvm 'echo OK'
 OK
 
 
+
+
 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
 MaxAuthTries okresla ilosć max prób autentykacji per połączenie. Kiedy login failure będzie w połowie error będzie w pliku syslog
 Po ustawieniu MaxAuthTries na niską liczbę minimalizuje się ryzyko brute forca na ssh server
@@ -45,3 +47,34 @@ $ ssh -o BatchMode=yes -o IdentitiesOnly=yes \
   cisvm 'echo OK'
 Received disconnect from 127.0.0.1 port 2222:2: Too many authentication failures
 Disconnected from 127.0.0.1 port 2222
+
+
+
+
+
+5.1.7 Ensure sshd ClientAliveInterval and ClientAliveCountMax
+are configured (Automated)
+
+ClientAliveInterval - timeout w sekundach po którym jeżeli nie było danych odebranych od klienta To sshd(8) (nasłuchuje na połączeniach od klientów ssh i 
+obsługuje szyfrowane połączenia zdalne)
+wyśle wiadomość przez zaszyfrowany kanał z requestem jakiejś odpowiedzi od klienta. Defaultowo nie ma żadnej odpowiedzi
+CO ILE WYSYŁA MU "ŻYJESZ?"
+
+ClientAliveCountMax - Ustawia liczbę client alive messages jaka może być wysłana bez sshd(8) dostającego jakiejkolwiek wiadomości od klienta.
+Jeżlei ten threshold zostanie osiągniętki kiedy client alive messages są wysyłane sshd zdisconnectuje clienta . Client alive messages są wysyłane przez 
+zaszyfrowany kanał więc nie są podatne na spoofing (podszywanie) w przeciwieństwie do TCP keepalive option. Defaultowo jest 3. Jeśli clientaliveinterval jest 15 i clientalivecountmax 
+jest default to nieodpowiadające clienty ssh będą odlączane po mniej wiecej 45 sekundach. Ustawiajac zero ClientAliveCountMax wyłączamy connection termination
+ILE TAKICH PYTAŃ BEZ ODPOWIEDZI ZANIM SERWER ZAMKNIE POŁĄCZENIE
+
+TO NIE JEST ROZŁĄCZANIE NIEAKTYWNEGO UŻYTKOWNIKA, TYLKO NP ZAWIESZONEGO KLIENTA
+
+Po co? Żeby zapobiec wyczerpywaniu zasobów
+ClientAliveCountMax musi być większe od 0 żeby ssh mogło dropować stojące połączenia. Jak połączenia mogą zostać cały czas to może być potencjał na atak DDOS (Distributed denial of service)
+lub zwykłe wyczerpywanie zasobów
+
+Do auditu wymaga się żeby obie te wartości były większe od 0
+Przy hardenie będę ustawiał pod 45 sekund timeoutu
+
+Po hardenie 
+ClientAliveInterval jest ustawione na 15 (zgodnie z wymaganiami CIS)
+ClientAliveCountMax jest ustawione na 3 (zgodnie z wymaganiami CIS)
