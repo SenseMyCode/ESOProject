@@ -52,4 +52,21 @@ else
   echo "ClientAliveCountMax ma wartość $client_alive_count_max (niezgodne z wymaganiami CIS)"
 fi
 
+# 5.1.4 Ensure sshd access is configured (Automated)
+
+max_punkty=$((max_punkty + 2))
+
+sshd_access_au=$(sshd -T | grep -i "^allowusers" | awk '{print $2}')
+sshd_access_ag=$(sshd -T | grep -i "^allowgroups" | awk '{print $2}')
+sshd_access_du=$(sshd -T | grep -i "^denyusers" | awk '{print $2}')
+sshd_access_dg=$(sshd -T | grep -i "^denygroups" | awk '{print $2}')
+
+if [[ -n "$sshd_access_au" || -n "$sshd_access_ag" || -n "$sshd_access_du" || -n "$sshd_access_dg" ]]; then
+  echo "sshd access jest skonfigurowane (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "sshd access nie jest skonfigurowane (niezgodne z wymaganiami CIS)"
+fi
+
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

@@ -78,3 +78,25 @@ Przy hardenie będę ustawiał pod 45 sekund timeoutu
 Po hardenie 
 ClientAliveInterval jest ustawione na 15 (zgodnie z wymaganiami CIS)
 ClientAliveCountMax jest ustawione na 3 (zgodnie z wymaganiami CIS)
+
+
+
+
+
+5.1.4 Ensure sshd access is configured (Automated)
+
+Jest kilka opcji i zaleca się żeby chociaż jedna z nich była ustawiona:
+AllowUsers - pozwala na zezwolenie połączenia ssh konkretnym użytkownikom, mogą też być z konkretnego hosta
+AllowGroups - pozwala na zezwolenie połączenia ssh konkretnej grupie użytkowników
+DenyUsers - pozwala na brak zezwolenia UŻYTKOWNIKA
+DenyGroups -||-
+
+Ograniczenie jacy użytkownicy mogą się łączyć poprzez ssh pomoże upewnić się że tylko autoryzowani użytkownicy mogą się dostać do systemu
+Jeżeli AllowUsers i AllowGroups są ustawione to będą zezwoleni użytkownicy którzy spełniają oba warunki (zaleca się ustawienie jednego tylko)
+
+Audit sprawdził że przed hardenem nie ma defaultowo żadnej z tych opcji ustawionych
+
+harden - ustawiam AllowUsers na $SUDO_USER - ten kto uruchomi skrypt
+
+Po hardenie sshd access jest skonfigurowane (zgodnie z wymaganiami CIS)
+

@@ -66,6 +66,35 @@ else
     fail=$((fail + 1))
 fi
 
+# 5.1.4 Ensure sshd access is configured (Automated)
+
+# Użytkownik spoza AllowUsers nie może zalogować się przez SSH - 5.1.4
+TEST_USER="cistest"
+
+if ! ssh -t "$VM" "(id $TEST_USER >/dev/null 2>&1 || sudo useradd -m -s /bin/bash $TEST_USER) && \
+    sudo mkdir -p /home/$TEST_USER/.ssh && \
+    sudo cp ~/.ssh/authorized_keys /home/$TEST_USER/.ssh/authorized_keys && \
+    sudo chown -R $TEST_USER:$TEST_USER /home/$TEST_USER/.ssh && \
+    sudo chmod 700 /home/$TEST_USER/.ssh && \
+    sudo chmod 600 /home/$TEST_USER/.ssh/authorized_keys"; then
+    echo "FAIL: Nie udało się przygotować testu 5 (tworzenie użytkownika $TEST_USER)"
+    fail=$((fail + 1))
+else
+    wynik=$(ssh -o BatchMode=yes -o ConnectTimeout=5 -l "$TEST_USER" "$VM" 'echo OK' 2>&1)
+
+    if echo "$wynik" | grep -q 'Permission denied'; then
+        echo "OK: Użytkownik spoza listy AllowUsers nie może zalogować się przez SSH"
+        ok=$((ok + 1))
+    elif echo "$wynik" | grep -q '^OK$'; then
+        echo "FAIL: Użytkownik spoza listy AllowUsers zalogował się przez SSH"
+        fail=$((fail + 1))
+    else
+        echo "FAIL: Nie udało się przeprowadzić testu: $wynik"
+        fail=$((fail + 1))
+    fi
+fi
+
+ssh -t "$VM" "sudo userdel -r $TEST_USER 2>/dev/null"
 
 # Wynik testów
 
