@@ -100,3 +100,21 @@ harden - ustawiam AllowUsers na $SUDO_USER - ten kto uruchomi skrypt
 
 Po hardenie sshd access jest skonfigurowane (zgodnie z wymaganiami CIS)
 
+
+
+
+4.1.2 Ensure ufw service is configured (Automated)
+
+ufw.service zajmuje się UFW uncomplicated firewall
+Chain - lista reguł
+Flush - wyczyszczenie
+W harden.sh najpierw allow potem enable a cała sekcja zapory na końcu, bo enable może zdropować connection
+Gdy włączone nie flushuje. Tylko przy modyfikowaniu albo zmianie domyślnej polityki
+POLITYKI USTAWIAJ PRZED UFW enable
+Domyślnie ufw pyta o potwierdzenie przy włączaniu zapory, ufw --force enable. Można bo w skrypcie dbamy o usunięcie niebezpieczeństwa przed którym to chroni
+
+Sprawdzenie i zmiany: ufw service musi być enabled and running~
+
+ufw.service - jednorazowe zadanie przy starcie systemu - czyta konfigurację i jesli zapora ma być włączona wczytuje reguły do jądra
+ufw - narzędzie dla administratora
+

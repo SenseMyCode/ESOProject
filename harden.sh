@@ -19,6 +19,11 @@ ClientAliveCountMax 3
 AllowGroups $SUDO_USER
 EOF
 
+# 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
+ufw allow 22/tcp
+systemctl unmask ufw.service          #odblokowuje ufw service
+systemctl --now enable ufw.service
+ufw --force enable
 
 if sshd -t; then
   systemctl restart ssh

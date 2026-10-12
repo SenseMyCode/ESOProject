@@ -40,8 +40,8 @@ ssh -t "$VM" 'sudo rm -f /root/.ssh/authorized_keys'
 KLUCZE="$(dirname "$0")/cis-zle-klucze"
 mkdir -p "$KLUCZE"
 for i in 1 2 3 4; do
-    if [[ ! -f "$KLUCZE/zly$i" ]]; then
-        ssh-keygen -t ed25519 -N "" -q -f "$KLUCZE/zly$i"
+    if [[ ! -f "$KLUCZE/zly$i" ]]; then #generuje tylko jeżeli jeszcze nie istnieje
+        ssh-keygen -t ed25519 -N "" -q -f "$KLUCZE/zly$i" #puste hasło do klucza
     fi
 done
 
@@ -79,6 +79,8 @@ if ! ssh -t "$VM" "(id $TEST_USER >/dev/null 2>&1 || sudo useradd -m -s /bin/bas
     sudo chmod 600 /home/$TEST_USER/.ssh/authorized_keys"; then
     echo "FAIL: Nie udało się przygotować testu 5 (tworzenie użytkownika $TEST_USER)"
     fail=$((fail + 1))
+    #sprawdza czy uzytkownik istnieje, jeśli nie to go tworzy, kopiuje klucz (ma poprawne dane logowania) i ustawia uprawnienia
+    #ustawienia praw na koncu muszą być, bo ktoś inny mógłby dopisać swoj klucz do authorized_keys
 else
     wynik=$(ssh -o BatchMode=yes -o ConnectTimeout=5 -l "$TEST_USER" "$VM" 'echo OK' 2>&1)
 

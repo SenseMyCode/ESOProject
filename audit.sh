@@ -36,18 +36,16 @@ max_punkty=$((max_punkty + 2))
 
 client_alive_interval=$(sshd -T | grep -i "^clientaliveinterval" | awk '{print $2}')
 if [[ "$client_alive_interval" -gt 0 ]]; then
-  echo "ClientAliveInterval jest ustawione na $client_alive_interval (zgodnie z wymaganiami CIS)"
-  punkty=$((punkty + 2))
+  echo "ClientAliveInterval jest ustawione na $client_alive_interval (częściowo zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
 else
-  echo "ClientAliveInterval ma wartość $client_alive_interval (niezgodne z wymaganiami CIS)"
+  echo "ClientAliveInterval ma wartość $client_alive_interval (niezgodne z wymaganiami CIS (wymaga też count alive max))"
 fi
-
-max_punkty=$((max_punkty + 2))
 
 client_alive_count_max=$(sshd -T | grep -i "^clientalivecountmax" | awk '{print $2}')
 if [[ "$client_alive_count_max" -gt 0 ]]; then
-  echo "ClientAliveCountMax jest ustawione na $client_alive_count_max (zgodnie z wymaganiami CIS)"
-  punkty=$((punkty + 2))
+  echo "ClientAliveCountMax jest ustawione na $client_alive_count_max (częściowo zgodnie z wymaganiami CIS (wymaga też count alive interval))"
+  punkty=$((punkty + 1))
 else
   echo "ClientAliveCountMax ma wartość $client_alive_count_max (niezgodne z wymaganiami CIS)"
 fi
@@ -68,5 +66,38 @@ else
   echo "sshd access nie jest skonfigurowane (niezgodne z wymaganiami CIS)"
 fi
 
+# 4.1.2 Ensure ufw service is configured (Automated)
+max_punkty=$((max_punkty + 2))
+
+ufw_service_enabled=$(systemctl is-enabled ufw.service 2>/dev/null)
+
+if [[ "$ufw_service_enabled" == "enabled" ]]; then
+  echo "UFW service jest włączone (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "UFW service jest wyłączone (niezgodne z wymaganiami CIS)"
+fi
+
+max_punkty=$((max_punkty + 2))
+
+ufw_service_active=$(systemctl is-active ufw.service 2>/dev/null)
+
+if [[ "$ufw_service_active" == "active" ]]; then
+  echo "UFW service jest aktywne (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "UFW service jest nieaktywne (niezgodne z wymaganiami CIS)"
+fi
+
+max_punkty=$((max_punkty + 2))
+
+ufw_status_active=$(ufw status 2>/dev/null | grep '^Status:' | awk '{print $2}')
+
+if [[ "$ufw_status_active" == "active" ]]; then
+  echo "UFW jest aktywne (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "UFW ma status $ufw_status_active (niezgodne z wymaganiami CIS)"
+fi
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
