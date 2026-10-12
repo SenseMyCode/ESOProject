@@ -118,3 +118,4 @@ Sprawdzenie i zmiany: ufw service musi być enabled and running~
 ufw.service - jednorazowe zadanie przy starcie systemu - czyta konfigurację i jesli zapora ma być włączona wczytuje reguły do jądra
 ufw - narzędzie dla administratora
 
+UFW MUSI BYĆ WŁĄCZONE I AKTYWNE ŻEBY UFW MOGŁO CHRONIĆ SYSTEM
