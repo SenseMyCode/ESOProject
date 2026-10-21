@@ -119,3 +119,55 @@ ufw.service - jednorazowe zadanie przy starcie systemu - czyta konfigurację i j
 ufw - narzędzie dla administratora
 
 UFW MUSI BYĆ WŁĄCZONE I AKTYWNE ŻEBY UFW MOGŁO CHRONIĆ SYSTEM
+
+
+
+4.1.3 Ensure ufw incoming default is configured (Automated)
+
+Def policy for incoming traffic mówi czy połączenia próbujące się połączyć z serwerem z zewnętrznych źródeł mogą to zrobić bez konkretnych zasad UFW
+
+Z defaultowym accept firewall będzie akceptował każdy pakiet króy nie jest skonfigurowany żeby być odrzucany. Łatwiej zrobić listę z akceptowanych niż z nieakceptowanych
+
+Każdy port lub protokół bez konkretnego allow będzie blokowany. Deny policy po cichu dropuje pakiety robiąc timeout podczas gdy reject odrzuca i wysyła message (mniej bezpieczne?)
+(BRAK SPRAWDZENIA AUDYTU I HARDEN)
+
+
+3.3.1.8 Ensure net.ipv4.conf.all.accept_redirects is configured
+(Automated)
+
+ICMP - pilnuje żeby ruch w sieci działał
+ICMP redirect messages - pakiety przekazujące informację o routingu i mówią hostowi żeby wysyłał pakiety inną ścieżką. Jest to sposób na pozwalanie zewnętrznym urządzeniom 
+updatować routing tables
+
+Jak ustawimy net.ipv4.conf.all.accept_redirects na 0 to system nie będzie akceptował żadnych ipv4 icmp redirect messages dzięki czemu nie będzie zezwalał osobom z zewnątrz
+na udpatowanie systemowych routing tables
+
+ICMP nie ma uwierzytelnienia, atakujący w tej samej sieci może wysłać sfałszowany pakiet, albo będzie podsłuchiwał, albo DoS
+
+Wykonywane są 2 sprawdzenia, ponieważ jedno sprawdza wartość której jądro używa w tej chwili a drugie wartości które system wczyta przy starcie
+
+Sytuacje:
+1. ktoś wykonał sysctl -w ... = 0, teraz zadziała ale w pliku nie ma, czyli po restarcie wartość wróci do 1
+2. Ktoś zapisał w pliku ale nie przeładował - ochrona zadziała dopiero po restarcie
+
+Drugie sprawdzenie: 
+wypisuje treść wszystkich plików sysctl które system wczyta przy starcie w kolejności
+wczytywania. Nad każdym plikiem jest linia
+#/sciezka/pliku
+grep - musi być bo pliki mają np zakomentowane przykłady czy wstawione znaki białe
+pomijanie spacji i różny zapis z . lub /
+tail - zostaw ostatnią czyli tę która wygrywa
+cut - dziel po = i weź wartość po prawej
+xargs - usuń spacje wokół wartości
+
+druga zmienna - z konfiguracji ufw  wyciagnij sciezke do pliku z parametrami jądra
+Jeżeli plik ufw istnieje i ustawia ten parametr to jego wartosc jest ostateczna
+bo ufw wczytuje go PO plikach systemowych (to co sprawdziliśmy wcześniej)
+gdy nigdzie nie ustawiono parametru w komunikacie pojawi się "brak" zamiast pustego
+muiejsca.
+
+harden - sprawdzamy wszystkie pliki uzywane przez systemd systcl i usuwamy 
+wszystkie linie które nie mają 0
+Tworzymy plik w /etc/sysctl.d/ z końcem .conf i edytujemy albo dodajemy
+net.ipv4.conf.all.accept_redirects = 0
+na koniec  sysctl --system

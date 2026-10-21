@@ -100,4 +100,54 @@ else
   echo "UFW ma status $ufw_status_active (niezgodne z wymaganiami CIS)"
 fi
 
+
+# 4.1.3 Ensure ufw incoming default is configured (Automated)
+
+max_punkty=$((max_punkty + 2))
+
+ufw_incoming_default=$(ufw status verbose | awk -F',' '$1~/Default/ {print $1}' | awk '{print $2}')
+
+if [[ "$ufw_incoming_default" == "deny" ]]; then
+  echo "UFW incoming default jest ustawione na deny (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "UFW incoming default ma wartość $ufw_incoming_default (niezgodne z wymaganiami CIS)"
+fi
+
+# 3.3.1.8 Ensure net.ipv4.conf.all.accept_redirects is configured
+
+max_punkty=$((max_punkty + 2))
+
+# Sprawdzenie wartości teraz
+
+accept_redirects_value=$(sysctl net.ipv4.conf.all.accept_redirects | awk '{print $3}')
+
+if [[ "$accept_redirects_value" == "0" ]]; then
+  echo "net.ipv4.conf.all.accept_redirects jest ustawione na 0 (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "net.ipv4.conf.all.accept_redirects ma wartość $accept_redirects_value (niezgodne z wymaganiami CIS)"
+fi
+
+# Sprawdzenie wartości po restarcie - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+accept_redirects_file=$(/usr/lib/systemd/systemd-sysctl --cat-config | grep -E '^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=' | tail -n 1 | cut -d= -f2 | xargs)
+
+ufw_sysctl_file=$(grep -E '^\s*IPT_SYSCTL=' /etc/default/ufw 2>/dev/null | cut -d= -f2)
+
+if [[ -f "$ufw_sysctl_file" ]]; then
+  ufw_value=$(grep -E '^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=' "$ufw_sysctl_file" \
+    | tail -n 1 | cut -d= -f2 | xargs)
+  if [[ -n "$ufw_value" ]]; then
+    accept_redirects_file="$ufw_value"
+  fi
+fi
+
+if [[ "$accept_redirects_file" == "0" ]]; then
+  echo "net.ipv4.conf.all.accept_redirects w plikach konfiguracyjnych = 0 (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "net.ipv4.conf.all.accept_redirects w plikach konfiguracyjnych = ${accept_redirects_file:-brak} (niezgodne z wymaganiami CIS)"
+fi
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

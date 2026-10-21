@@ -14,10 +14,10 @@ Trudność w skali: 1 – łatwe, 2 – średnie, 3 – trudne, 5 – bardzo tru
 | 3.3.1.8 | Ignorowanie przekierowań ICMP | Bezpieczeństwo sieci | L1 | 1 | X |
 | 3.3.1.16 | Logowanie podejrzanych pakietów (martians) | Bezpieczeństwo sieci | L1 | 1 | X |
 | 3.3.1.18 | Włączone TCP SYN cookies | Bezpieczeństwo sieci | L1 | 1 | X |
-| 4.1.2 | Usługa ufw jest włączona i aktywna | Firewall | L1 | 2 | X |
-| 4.1.3 | Domyślne blokowanie ruchu przychodzącego w ufw | Firewall | L1 | 2 | X |
-| 5.1.4 | Ograniczenie dostępu SSH do wybranych użytkowników lub grup | SSH | L1 | 2 | X |
-| 5.1.7 | Rozłączanie nieaktywnych sesji SSH | SSH | L1 | 1 | X |
+| 4.1.2 | Usługa ufw jest włączona i aktywna | Firewall | L1 | 2 | ✓ |
+| 4.1.3 | Domyślne blokowanie ruchu przychodzącego w ufw | Firewall | L1 | 2 | ✓ |
+| 5.1.4 | Ograniczenie dostępu SSH do wybranych użytkowników lub grup | SSH | L1 | 2 | ✓ |
+| 5.1.7 | Rozłączanie nieaktywnych sesji SSH | SSH | L1 | 1 | ✓ |
 | 5.1.16 | Limit prób uwierzytelnienia w SSH (MaxAuthTries) | SSH | L1 | 1 | ✓ |
 | 5.1.20 | Zakaz logowania na konto root przez SSH | SSH | L1 | 1 | ✓ |
 | 5.2.3 | Osobny plik logu dla sudo | Uprawnienia | L1 | 1 | X |
