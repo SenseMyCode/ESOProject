@@ -171,3 +171,11 @@ wszystkie linie które nie mają 0
 Tworzymy plik w /etc/sysctl.d/ z końcem .conf i edytujemy albo dodajemy
 net.ipv4.conf.all.accept_redirects = 0
 na koniec  sysctl --system
+
+
+
+3.3.1.16 Ensure net.ipv4.conf.all.log_martians is configured
+
+Po włączeniu ta funkcja rejestruje w logach jądra pakiety z adresami źródłowymi, których nie da się skierować do właściwego miejsca docelowego
+Rejestrowanie tych pakietów pozwala administratorowi sprawdzenie możliwości, że atakujący wysyła spoofowane pakiety do systemu
+

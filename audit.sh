@@ -150,4 +150,40 @@ else
   echo "net.ipv4.conf.all.accept_redirects w plikach konfiguracyjnych = ${accept_redirects_file:-brak} (niezgodne z wymaganiami CIS)"
 fi
 
+# 3.3.1.16 Ensure net.ipv4.conf.all.log_martians is configured !!!!!!!!!!!!!!!!!!!!
+
+max_punkty=$((max_punkty + 2))
+
+# wartość teraz
+
+log_martians_value=$(sysctl net.ipv4.conf.all.log_martians | awk '{print $3}')
+
+if [[ "$log_martians_value" == "1" ]]; then
+  echo "net.ipv4.conf.all.log_martians jest ustawione na 1 (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "net.ipv4.conf.all.log_martians ma wartość $log_martians_value (niezgodne z wymaganiami CIS)"
+fi
+
+#plik
+
+log_martians_file=$(/usr/lib/systemd/systemd-sysctl --cat-config | grep -E '^\s*net[./]ipv4[./]conf[./]all[./]log_martians\s*=' | tail -n 1 | cut -d= -f2 | xargs)
+
+ufw_sysctl_file=$(grep -E '^\s*IPT_SYSCTL=' /etc/default/ufw 2>/dev/null | cut -d= -f2)
+
+if [[ -f "$ufw_sysctl_file" ]]; then
+  ufw_value=$(grep -E '^\s*net[./]ipv4[./]conf[./]all[./]log_martians\s*=' "$ufw_sysctl_file" \
+    | tail -n 1 | cut -d= -f2 | xargs)
+  if [[ -n "$ufw_value" ]]; then
+    log_martians_file="$ufw_value"
+  fi
+fi
+
+if [[ "$log_martians_file" == "1" ]]; then
+  echo "net.ipv4.conf.all.log_martians w plikach konfiguracyjnych = 1 (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "net.ipv4.conf.all.log_martians w plikach konfiguracyjnych = ${log_martians_file:-brak} (niezgodne z wymaganiami CIS)"
+fi
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
