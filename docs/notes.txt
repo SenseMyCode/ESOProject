@@ -179,3 +179,24 @@ na koniec  sysctl --system
 Po włączeniu ta funkcja rejestruje w logach jądra pakiety z adresami źródłowymi, których nie da się skierować do właściwego miejsca docelowego
 Rejestrowanie tych pakietów pozwala administratorowi sprawdzenie możliwości, że atakujący wysyła spoofowane pakiety do systemu
 
+Audyt:
+Sprawdzamy czy w aktualnej konfiguracji ta opcja jest włączona
+Następnie sprawdzamy czy w pliku używanym przez systemd systemctl też jest
+
+Harden:
+Przeglądamy wszystkie pliki uzywane przez systemd systemctl i komentujemy albo usuwamy linie które nie ustawiają tego na 1
+Tworzymy plik w /etc/sysctl.d z koncowka .conf (ktory juz jest stworzony przez poprzednie zalecenia) i edytujemy go dodając to ustawienie
+
+
+
+3.3.1.18 Ensure net.ipv4.tcp_syncookies is configured
+
+Przy tcp_syncookies włączonym jądro obsługuje pakiety TCP SYN normalnie dopóki kolejka półotwartych połączeń się nie zapełni. Wtedy włącza się mechanizm SYN cookies
+(najprawdopodobniej gdy trwa atak)
+Syn cookies nie używają kolejki SYN - atakujący nie ma czego zapchać
+Jądro odpowiada na SYN packietem SYN/ACK ale ze specjalnym numerem sekwencyjnym który kjoduje aders IP i port źródłowy oraz docelowy i czas wysłania pakietu
+Prawdziwe połączenie odeśle pakiet ACK z tym spejclanym numerem (normalny klient nic nie musi wiedzieć o cookies, robi to co zawsze)
+Pozwala to systemowi sprawdzić że dostał poprawną odpowiedź na SYN cookie i przyjąć połączenie mimo że w kolejce nie ma odpowiadajcącego mu SYN
+Gdy przychodzi ACK serwer oblicza cookie jeszcze raz z danych tego pakietu i porównuje z numerem ACK, jeśli się zgadza to jest okej
+
+To zapobiega SYN flood, jeżeli atakujący wysyła masę SYN i nie odpowiada to kosztuje serwer tylko wysłanie odpowiedzi a nie miejsce w pamięci więc nie zapycha kolejki

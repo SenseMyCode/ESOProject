@@ -3,6 +3,9 @@
 punkty=0
 max_punkty=0
 
+# Plik, w którym UFW trzyma swoje parametry jądra - wczytywany przy starcie po plikach systemowych
+ufw_sysctl_file=$(grep -E '^\s*IPT_SYSCTL=' /etc/default/ufw 2>/dev/null | cut -d= -f2)
+
 if [[ "$EUID" -ne 0 ]]; then
   echo "Uruchom skrypt jako root (sudo)"
   exit 1
@@ -133,8 +136,6 @@ fi
 
 accept_redirects_file=$(/usr/lib/systemd/systemd-sysctl --cat-config | grep -E '^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=' | tail -n 1 | cut -d= -f2 | xargs)
 
-ufw_sysctl_file=$(grep -E '^\s*IPT_SYSCTL=' /etc/default/ufw 2>/dev/null | cut -d= -f2)
-
 if [[ -f "$ufw_sysctl_file" ]]; then
   ufw_value=$(grep -E '^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=' "$ufw_sysctl_file" \
     | tail -n 1 | cut -d= -f2 | xargs)
@@ -169,8 +170,6 @@ fi
 
 log_martians_file=$(/usr/lib/systemd/systemd-sysctl --cat-config | grep -E '^\s*net[./]ipv4[./]conf[./]all[./]log_martians\s*=' | tail -n 1 | cut -d= -f2 | xargs)
 
-ufw_sysctl_file=$(grep -E '^\s*IPT_SYSCTL=' /etc/default/ufw 2>/dev/null | cut -d= -f2)
-
 if [[ -f "$ufw_sysctl_file" ]]; then
   ufw_value=$(grep -E '^\s*net[./]ipv4[./]conf[./]all[./]log_martians\s*=' "$ufw_sysctl_file" \
     | tail -n 1 | cut -d= -f2 | xargs)
@@ -185,5 +184,40 @@ if [[ "$log_martians_file" == "1" ]]; then
 else
   echo "net.ipv4.conf.all.log_martians w plikach konfiguracyjnych = ${log_martians_file:-brak} (niezgodne z wymaganiami CIS)"
 fi
+
+# 3.3.1.18 Ensure net.ipv4.tcp_syncookies is configured
+
+max_punkty=$((max_punkty + 2))
+
+# wartość teraz
+
+tcp_syncookies_value=$(sysctl net.ipv4.tcp_syncookies | awk '{print $3}')
+
+if [[ "$tcp_syncookies_value" == "1" ]]; then
+  echo "net.ipv4.tcp_syncookies jest ustawione na 1 (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "net.ipv4.tcp_syncookies ma wartość $tcp_syncookies_value (niezgodne z wymaganiami CIS)"
+fi
+
+#plik
+
+tcp_syncookies_file=$(/usr/lib/systemd/systemd-sysctl --cat-config | grep -E '^\s*net[./]ipv4[./]tcp_syncookies\s*=' | tail -n 1 | cut -d= -f2 | xargs)
+
+if [[ -f "$ufw_sysctl_file" ]]; then
+  ufw_value=$(grep -E '^\s*net[./]ipv4[./]tcp_syncookies\s*=' "$ufw_sysctl_file" \
+    | tail -n 1 | cut -d= -f2 | xargs)
+  if [[ -n "$ufw_value" ]]; then
+    tcp_syncookies_file="$ufw_value"
+  fi
+fi
+
+if [[ "$tcp_syncookies_file" == "1" ]]; then
+  echo "net.ipv4.tcp_syncookies w plikach konfiguracyjnych = 1 (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "net.ipv4.tcp_syncookies w plikach konfiguracyjnych = ${tcp_syncookies_file:-brak} (niezgodne z wymaganiami CIS)"
+fi
+
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

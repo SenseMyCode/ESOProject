@@ -21,7 +21,7 @@ PermitRootLogin no
 MaxAuthTries 4
 ClientAliveInterval 15
 ClientAliveCountMax 3
-AllowGroups $SUDO_USER
+AllowUsers $SUDO_USER
 EOF
 
 # Przygotowanie katalogu /run/sshd, jeśli nie istnieje, aby uniknąć błędów przy restarcie usługi SSH
@@ -40,6 +40,7 @@ fi
 
 # 3.3.1.8 Ensure net.ipv4.conf.all.accept_redirects is configured
 # 3.3.1.16 Ensure net.ipv4.conf.all.log_martians is configured 
+# 3.3.1.18 Ensure net.ipv4.tcp_syncookies is configured
 
 #zakomentuj parametr we wszystkich innych plikach, tak żeby mój plik
 #był jedynym miejscem które go ustawia
@@ -49,6 +50,7 @@ for plik in /etc/sysctl.conf /etc/sysctl.d/*.conf "$UFW_SYSCTL_FILE"; do
   if [[ -f "$plik" && "$plik" != "/etc/sysctl.d/60-cis.conf" ]]; then
     sed -ri 's/^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=/# &/' "$plik"
     sed -ri 's/^\s*net[./]ipv4[./]conf[./]all[./]log_martians\s*=/# &/' "$plik"
+    sed -ri 's/^\s*net[./]ipv4[./]tcp_syncookies\s*=/# &/' "$plik"
   fi
 done
 
@@ -56,6 +58,7 @@ done
 cat > "/etc/sysctl.d/60-cis.conf" <<EOF || exit 1
 net.ipv4.conf.all.accept_redirects = 0
 net.ipv4.conf.all.log_martians = 1
+net.ipv4.tcp_syncookies = 1
 EOF
 
 #wczytuję wszystkie pliki sysctl do jądra
