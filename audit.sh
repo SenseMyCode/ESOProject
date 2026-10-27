@@ -219,5 +219,38 @@ else
   echo "net.ipv4.tcp_syncookies w plikach konfiguracyjnych = ${tcp_syncookies_file:-brak} (niezgodne z wymaganiami CIS)"
 fi
 
+# 5.2.3 Ensure sudo log file exists (Automated)
+
+max_punkty=$((max_punkty + 2))
+
+sudo_log_file=$(grep -rPsi "^\h*Defaults\h+([^#]+,\h*)?logfile\h*=\h*(\"|\')?\H+(\"|\')?(,\h*\H+\h*)*\h*(#.*)?$" /etc/sudoers*)
+
+if [[ -n "$sudo_log_file" ]]; then
+  echo "Osobny plik logu sudo istnieje (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "Osobny plik logu sudo nie istnieje (niezgodne z wymaganiami CIS)"
+fi
+
+# 5.2.7 Ensure access to the su command is restricted
+max_punkty=$((max_punkty + 2))
+
+su_line=$(grep -Pi '^\h*auth\h+(?:required|requisite)\h+pam_wheel\.so\h+(?:[^#\n\r]+\h+)?((?!\2)(use_uid\b|group=\H+\b))\h+(?:[^#\n\r]+\h+)?((?!\1)(use_uid\b|group=\H+\b))(\h+.*)?$' /etc/pam.d/su)
+
+su_group=$(echo "$su_line" | grep -oP 'group=\K\H+' | head -n 1)
+
+su_group_line=$(grep "^${su_group}:" /etc/group)
+su_members=$(echo "$su_group_line" | cut -d: -f4)
+
+if [[ -z "$su_line" ]]; then
+  echo "5.2.7 su: brak linii pam_wheel.so use_uid group=... w /etc/pam.d/su (niezgodne z wymaganiami CIS)"
+elif [[ -z "$su_group_line" ]]; then
+  echo "5.2.7 su: grupa $su_group nie istnieje w /etc/group (niezgodne z wymaganiami CIS)"
+elif [[ -n "$su_members" ]]; then
+  echo "5.2.7 su: grupa $su_group ma członków: $su_members (niezgodne z wymaganiami CIS)"
+else
+  echo "5.2.7 su: dostęp ograniczony do pustej grupy $su_group (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+fi
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

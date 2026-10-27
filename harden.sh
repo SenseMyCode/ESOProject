@@ -64,7 +64,36 @@ EOF
 #wczytuję wszystkie pliki sysctl do jądra
 sysctl --system > /dev/null
 
+# 5.2.3 Ensure sudo log file exists (Automated)
 
+SUDOERS_CIS="/etc/sudoers.d/60-cis"
+TMP_SUDOERS=$(mktemp)
+
+cat > "$TMP_SUDOERS" <<'EOF'
+Defaults logfile="/var/log/sudo.log"
+EOF
+
+if visudo -cf "$TMP_SUDOERS" > /dev/null; then
+  install -m 0440 -o root -g root "$TMP_SUDOERS" "$SUDOERS_CIS"
+else
+  echo "Błąd w konfiguracji sudoers - nie zapisuję zmian"
+  rm -f "$TMP_SUDOERS"
+  exit 1
+fi
+rm -f "$TMP_SUDOERS"
+
+# 5.2.7 Ensure access to the su command is restricted (Automated)
+groupadd -f sugroup
+gpasswd -M "" sugroup
+
+if ! grep -Eq '^\s*auth\s+required\s+pam_wheel\.so\s+use_uid\s+group=sugroup' /etc/pam.d/su; then
+  sed -Ei '/^\s*auth\s+sufficient\s+pam_rootok\.so/a auth       required   pam_wheel.so use_uid group=sugroup' /etc/pam.d/su
+fi
+
+if ! grep -Eq '^\s*auth\s+required\s+pam_wheel\.so\s+use_uid\s+group=sugroup' /etc/pam.d/su; then
+  echo "Nie udało się dodać reguły pam_wheel do /etc/pam.d/su"
+  exit 1
+fi
 
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp

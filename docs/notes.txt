@@ -200,3 +200,29 @@ Pozwala to systemowi sprawdzić że dostał poprawną odpowiedź na SYN cookie i
 Gdy przychodzi ACK serwer oblicza cookie jeszcze raz z danych tego pakietu i porównuje z numerem ACK, jeśli się zgadza to jest okej
 
 To zapobiega SYN flood, jeżeli atakujący wysyła masę SYN i nie odpowiada to kosztuje serwer tylko wysłanie odpowiedzi a nie miejsce w pamięci więc nie zapycha kolejki
+
+
+
+5.2.3 Ensure sudo log file exists (Automated)
+
+Plik logów sudo upraszcza audyt poleceń sudo - sudo ma zapisywać każde użycie do osobnego pliku, normalnie loguje
+do dziennika systemowego razem z logowaniami cronem i innymi zdarzeniami.
+
+TODO: OGARNIJ REGEX z audytu i harden!!!!
+
+
+5.2.7 Ensure access to the su command is restricted (Automated)
+su pozwala użytkownikowi uruchamiać komendy jako inny user. Po hardeningu tylko konkretne grupy użytkowników będą mogły korzystać z su (grupa powinna być pusta tak naprawdę)
+Kontrola nad eskalacją praw, poza tym sudo ma lepsze mechanizmy loggowania i audytu
+
+TODO: OGARNIJ REGEX, audyt, harden
+
+Audyt - szuka w /etc/pam.d/su niezakomentowanej linii auth required pam_wheel z opcjami use_uid i group=<grupa>
+wyciąga nazwę grupy
+sprawdza w /etc/group czy ta grupa istnieje i nie ma członków
+
+harden
+tworzy grupę sugroup
+czysli liste jej członków
+jeśli reguły jeszcze nie ma dopisuje auth required pam_wheel.so use_uid group=sugropup zaraz pod linią pam_rootok
+sprawdza czy reguła się pojawiła
