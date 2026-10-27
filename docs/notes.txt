@@ -226,3 +226,12 @@ tworzy grupę sugroup
 czysli liste jej członków
 jeśli reguły jeszcze nie ma dopisuje auth required pam_wheel.so use_uid group=sugropup zaraz pod linią pam_rootok
 sprawdza czy reguła się pojawiła
+
+
+2.3.1.1 Ensure a single time synchronization daemon is in use
+Czas systemowy powinien być zsynchronizowany pomiędzy wszystkimi systemami w środowisku, tak żeby wspierać time sensitive security mechanizms (certyfikaty np)
+oraz żeby logi się zgadzały co pomaga potem w odkrywaniu co się stało
+
+Audyt - dokładnie jeden z dwóch daemonów powinien być available chrony lub systemd-timesyncd
+
+Na maszynach wirtualnych które synchroniuzują czas z hostem CIS każe tę sekcję pominąć

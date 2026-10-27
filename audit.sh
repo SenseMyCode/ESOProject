@@ -233,6 +233,7 @@ else
 fi
 
 # 5.2.7 Ensure access to the su command is restricted
+
 max_punkty=$((max_punkty + 2))
 
 su_line=$(grep -Pi '^\h*auth\h+(?:required|requisite)\h+pam_wheel\.so\h+(?:[^#\n\r]+\h+)?((?!\2)(use_uid\b|group=\H+\b))\h+(?:[^#\n\r]+\h+)?((?!\1)(use_uid\b|group=\H+\b))(\h+.*)?$' /etc/pam.d/su)
@@ -252,5 +253,29 @@ else
   echo "5.2.7 su: dostęp ograniczony do pustej grupy $su_group (zgodne z wymaganiami CIS)"
   punkty=$((punkty + 2))
 fi
+
+# 2.3.1.1 Ensure a single time synchronization daemon is in use
+
+max_punkty=$((max_punkty + 2))
+
+time_count=0
+time_list=""
+
+for daemon in systemd-timesyncd.service chrony.service; do
+  if systemctl is-enabled "$daemon" 2>/dev/null |grep -q '^enabled' || systemctl is-active "$daemon" 2>/dev/null |grep -q '^active'; then
+    time_count=$((time_count + 1))
+    time_list="$time_list $daemon"
+  fi
+done
+
+if [[ "$time_count" -eq 1 ]]; then
+  echo "Używany jest jeden demon synchronizacji czasu: $time_list (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+elif [[ "$time_count" -gt 1 ]]; then
+  echo "Używanych jest wiele demonów synchronizacji czasu: $time_list (niezgodne z wymaganiami CIS)"
+else
+  echo "Nie używany jest żaden demon synchronizacji czasu (niezgodne z wymaganiami CIS)"
+fi
+
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

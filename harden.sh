@@ -95,6 +95,14 @@ if ! grep -Eq '^\s*auth\s+required\s+pam_wheel\.so\s+use_uid\s+group=sugroup' /e
   exit 1
 fi
 
+# 2.3.1.1 Ensure a single time synchronization daemon is in use. Pozbywamy się chrony bo systemd-timesyncd jest domyślnym i wystarczającym demonem synchronizacji czasu 
+if dpkg -s chrony &>/dev/null; then
+  apt-get purge -y chrony
+fi
+
+systemctl unmask systemd-timesyncd.service
+systemctl --now enable systemd-timesyncd.service
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)
