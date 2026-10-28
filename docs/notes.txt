@@ -235,3 +235,21 @@ oraz żeby logi się zgadzały co pomaga potem w odkrywaniu co się stało
 Audyt - dokładnie jeden z dwóch daemonów powinien być available chrony lub systemd-timesyncd
 
 Na maszynach wirtualnych które synchroniuzują czas z hostem CIS każe tę sekcję pominąć
+
+
+5.4.3.2 Ensure default user shell timeout is configured - do ogarnięci audit i harden
+
+TMOUT - env setting który określa timeout z shella w sekundach
+TMOUT=n - ustawia na n sekund, =0 disabluje
+Readonly TMOUT - nie bedzie mozna modyfikować podczas runtime
+
+Ustawienie timeoutu zmniejsza opcję dla nieautoryzowanego user access do shella innego usera, które zostało pozostawione bez nadzoru
+Kończy nieaktywną sesję i wwypuszcza resource
+
+Zalecenia - wartość od 1 do 900 sekund
+Readonly
+export - zmienna przechodzi do powłok uruchamianych z tej sesji
+
+Gdy ktoś odchodiz od komputera z otwartą sesją SSH to każdy ma gotowty dostęp
+
+Tutaj człowiek nic nie robi

@@ -103,6 +103,22 @@ fi
 systemctl unmask systemd-timesyncd.service
 systemctl --now enable systemd-timesyncd.service
 
+# 5.4.3.2 Ensure default user shell timeout is configured
+TMOUT_FILE="/etc/profile.d/60-cis-tmout.sh"     
+
+# TMOUT ma być ustawione w jednym miejscu (drugie readonly = błąd przy logowaniu)
+for plik in /etc/bash.bashrc /etc/profile /etc/profile.d/*.sh; do
+  if [[ -f "$plik" && "$plik" != "$TMOUT_FILE" ]]; then
+    sed -ri 's/^([^#]*\bTMOUT\b)/# \1/' "$plik"
+  fi
+done
+
+cat > "$TMOUT_FILE" <<'EOF' || exit 1
+# CIS 5.4.3.2 - wylogowanie nieaktywnej powłoki po 15 minutach; readonly + export
+typeset -xr TMOUT=900
+EOF
+chmod 644 "$TMOUT_FILE"
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)

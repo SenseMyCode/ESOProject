@@ -277,5 +277,26 @@ else
   echo "Nie używany jest żaden demon synchronizacji czasu (niezgodne z wymaganiami CIS)"
 fi
 
+# 5.4.3.2 Ensure default user shell timeout is configured
+max_punkty=$((max_punkty + 2))
+
+tmout_decl=$(bash -lc 'declare -p TMOUT' 2>/dev/null)          # np. declare -rx TMOUT="900"
+tmout_flags=$(echo "$tmout_decl" | awk '{print $2}')            # np. -rx
+tmout_value=$(echo "$tmout_decl" | grep -oP 'TMOUT="\K\d+')      # np. 900
+
+if [[ -n "$tmout_value" && "$tmout_value" -ge 1 && "$tmout_value" -le 900 ]]; then
+  echo "5.4.3.2 TMOUT = $tmout_value s (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "5.4.3.2 TMOUT = ${tmout_value:-nie ustawione}, wymagane 1-900 s (niezgodne z wymaganiami CIS)"
+fi
+
+if [[ "$tmout_flags" == *r* && "$tmout_flags" == *x* ]]; then
+  echo "5.4.3.2 TMOUT jest readonly i exportowane (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "5.4.3.2 TMOUT atrybuty: ${tmout_flags:-brak}, wymagane readonly i export (niezgodne z wymaganiami CIS)"
+fi
+
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
