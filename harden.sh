@@ -120,6 +120,11 @@ typeset -xr TMOUT=900
 EOF
 chmod 644 "$TMOUT_FILE"
 
+# 1.4.2 Ensure access to bootloader config is configured (Automated)
+
+chown root:root /boot/grub/grub.cfg || exit 1
+chmod u-x,go-rwx /boot/grub/grub.cfg || exit 1
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)

@@ -310,4 +310,26 @@ else
   echo "LoginGraceTime ma wartość ${login_grace_time:-nie ustawione}, wymagane <= 60 s (niezgodne z wymaganiami CIS)"
 fi
 
+# 1.4.2 Ensure access to bootloader config is configured
+
+max_punkty=$((max_punkty + 2))
+
+grub_cfg="/boot/grub/grub.cfg"
+grub_mode=$(stat -Lc '%a' "$grub_cfg")
+grub_owner=$(stat -Lc '%u:%g' "$grub_cfg")
+
+if [[ -n "$grub_mode" ]] && (( (8#$grub_mode & 8#177) == 0 )); then
+  echo "1.4.2 Uprawnienia $grub_cfg: $grub_mode (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "1.4.2 Uprawnienia $grub_cfg: ${grub_mode:-brak pliku}, wymagane 600 lub mniej (niezgodne z wymaganiami CIS)"
+fi
+
+if [[ "$grub_owner" == "0:0" ]]; then
+  echo "1.4.2 Właściciel $grub_cfg: root:root (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "1.4.2 Właściciel $grub_cfg: ${grub_owner:-brak pliku}, wymagany root:root (niezgodne z wymaganiami CIS)"
+fi
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

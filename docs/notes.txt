@@ -262,3 +262,15 @@ Im dłuższy jest tym więcej czasu nieautentykowane połączenia mogą istnieć
 
 Powinno się ustawić na 60 sekund tak żeby zminimalizować ryzyko brute force
 
+
+1.4.2 Ensure access to bootloader config is configured - audyt i hardening
+
+grub.cfg to konfiguracja bootloadera GRUB, programu który startuje
+prze linuxem i wybiera jądro z parametrami. CIS wymaga żeby właścicielem
+był root:root a uprawnienia wynosiły 0600 lub mniej, tylko root czyta i 
+zapisuje, nikt inny nie ma dostępu
+
+Gdyby nie to to atakujący mógłby się dowiedzieć jakie są słabości przy
+starcie systemu
+
+Domyślnie jest 0644 lub 0444, czytać może każdy
