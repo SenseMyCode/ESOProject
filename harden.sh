@@ -125,6 +125,17 @@ chmod 644 "$TMOUT_FILE"
 chown root:root /boot/grub/grub.cfg || exit 1
 chmod u-x,go-rwx /boot/grub/grub.cfg || exit 1
 
+# 1.1.1.10 Ensure usb-storage kernel module is not available (Automated)
+
+cat > /etc/modprobe.d/60-cis-usb-storage.conf <<'EOF' || exit 1
+install usb_storage /bin/false
+blacklist usb_storage
+EOF
+
+#wyłączam moduł usb-storage, jeśli jest załadowany
+modprobe -r usb-storage 2>/dev/null
+rmmod usb-storage 2>/dev/null
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)

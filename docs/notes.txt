@@ -274,3 +274,24 @@ Gdyby nie to to atakujący mógłby się dowiedzieć jakie są słabości przy
 starcie systemu
 
 Domyślnie jest 0644 lub 0444, czytać może każdy
+
+1.1.1.10 Ensure usb-storage kernel module is not available
+
+Sterowniki do obługi sprzętu są w osobnych plikach, ładują się dopiero
+gdy są potrzebne.
+CIS chce żeby sterownika usb-storage nie dało się załadować, ponieważ pendrive
+to klasyczny sposób na wyniesienie danych z firmy albo wniesienie malware
+Wyłączenie tego modułu zmniejsza fizyczną powierzchnię ataku
+
+Na serwerze i tak nikt nie używa pendrive, jeśli robi się backup na dysk usb
+to CIS proponuje białą listę konkretnych urządzeń USBGuard
+
+CIS wymaga dwóch różnych blokad
+blacklist usb_storage - blokuje automatyczne ładowanie
+install usb_storage / bin/false - zamiast ładować moduł
+modprobe uruchamia /bin/false który od razu kończy się błędem
+
+Blacklist by nie wystarczył bo administrator albo atakujący z sudo nadal
+może załadować moduł ręcznie, install to zamyka
+
+NIE ZROBIŁEŚ AUDYTU

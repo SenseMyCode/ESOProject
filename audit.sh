@@ -332,4 +332,10 @@ else
   echo "1.4.2 Właściciel $grub_cfg: ${grub_owner:-brak pliku}, wymagany root:root (niezgodne z wymaganiami CIS)"
 fi
 
+# 1.1.1.10 Ensure usb-storage kernel module is not available (Automated)
+
+max_punkty=$((max_punkty + 2))
+
+
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
