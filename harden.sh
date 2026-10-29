@@ -14,7 +14,7 @@ fi
 # 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
 # 5.1.7 Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured (Automated)
 # 5.1.4 Ensure sshd access is configured (Automated)
-
+# 5.1.13 Ensure sshd LoginGraceTime is configured (Automated)
 
 cat > /etc/ssh/sshd_config.d/00-cis.conf <<EOF || exit 1
 PermitRootLogin no
@@ -22,6 +22,7 @@ MaxAuthTries 4
 ClientAliveInterval 15
 ClientAliveCountMax 3
 AllowUsers $SUDO_USER
+LoginGraceTime 60
 EOF
 
 # Przygotowanie katalogu /run/sshd, jeśli nie istnieje, aby uniknąć błędów przy restarcie usługi SSH

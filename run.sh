@@ -2,8 +2,8 @@
 # run.sh - wysyła aktualne skrypty na VM i uruchamia wybrany
 # Użycie: ./run.sh audit.sh
 
-VM="cisvm"     # skrót z ~/.ssh/config
-CEL="cis"      # folder na VM: /home/twoj_login/cis
+VM="cisvm"     
+CEL="cis"      
 
 skrypt="$1"
 if [ -z "$skrypt" ] || [ ! -f "$skrypt" ]; then

@@ -298,5 +298,16 @@ else
   echo "5.4.3.2 TMOUT atrybuty: ${tmout_flags:-brak}, wymagane readonly i export (niezgodne z wymaganiami CIS)"
 fi
 
+# 5.1.13 Ensure sshd LoginGraceTime is configured (Automated)
+
+max_punkty=$((max_punkty + 2))
+
+login_grace_time=$(sshd -T | grep "^logingracetime" | awk '{print $2}')
+if [[ -n "$login_grace_time" && "$login_grace_time" -ge 1 && "$login_grace_time" -le 60 ]]; then
+  echo "LoginGraceTime jest ustawione na $login_grace_time s (zgodnie z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "LoginGraceTime ma wartość ${login_grace_time:-nie ustawione}, wymagane <= 60 s (niezgodne z wymaganiami CIS)"
+fi
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

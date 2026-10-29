@@ -253,3 +253,12 @@ export - zmienna przechodzi do powłok uruchamianych z tej sesji
 Gdy ktoś odchodiz od komputera z otwartą sesją SSH to każdy ma gotowty dostęp
 
 Tutaj człowiek nic nie robi
+
+
+5.1.13 Ensure sshd LoginGraceTime is configured (Automated)
+
+LoginGraceTime - czas w którym możliwa jest poprawna autentykacja na ssh server
+Im dłuższy jest tym więcej czasu nieautentykowane połączenia mogą istnieć
+
+Powinno się ustawić na 60 sekund tak żeby zminimalizować ryzyko brute force
+
