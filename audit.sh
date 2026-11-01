@@ -26,7 +26,7 @@ fi
 max_punkty=$((max_punkty + 2))
 
 max_auth_tries_value=$(sshd -T | grep "^maxauthtries" | awk '{print $2}')
-if [[ "$max_auth_tries_value" -le 4 ]]; then
+if [[ -n "$max_auth_tries_value" && "$max_auth_tries_value" -le 4 ]]; then
   echo "MaxAuthTries jest ustawione na $max_auth_tries_value (zgodnie z wymaganiami CIS)"
   punkty=$((punkty + 2))
 else
@@ -70,35 +70,35 @@ else
 fi
 
 # 4.1.2 Ensure ufw service is configured (Automated)
-max_punkty=$((max_punkty + 2))
+max_punkty=$((max_punkty + 1))
 
 ufw_service_enabled=$(systemctl is-enabled ufw.service 2>/dev/null)
 
 if [[ "$ufw_service_enabled" == "enabled" ]]; then
   echo "UFW service jest włączone (zgodnie z wymaganiami CIS)"
-  punkty=$((punkty + 2))
+  punkty=$((punkty + 1))
 else
   echo "UFW service jest wyłączone (niezgodne z wymaganiami CIS)"
 fi
 
-max_punkty=$((max_punkty + 2))
+max_punkty=$((max_punkty + 1))
 
 ufw_service_active=$(systemctl is-active ufw.service 2>/dev/null)
 
 if [[ "$ufw_service_active" == "active" ]]; then
   echo "UFW service jest aktywne (zgodnie z wymaganiami CIS)"
-  punkty=$((punkty + 2))
+  punkty=$((punkty + 1))
 else
   echo "UFW service jest nieaktywne (niezgodne z wymaganiami CIS)"
 fi
 
-max_punkty=$((max_punkty + 2))
+max_punkty=$((max_punkty + 1))
 
 ufw_status_active=$(ufw status 2>/dev/null | grep '^Status:' | awk '{print $2}')
 
 if [[ "$ufw_status_active" == "active" ]]; then
   echo "UFW jest aktywne (zgodnie z wymaganiami CIS)"
-  punkty=$((punkty + 2))
+  punkty=$((punkty + 1))
 else
   echo "UFW ma status $ufw_status_active (niezgodne z wymaganiami CIS)"
 fi
@@ -110,7 +110,7 @@ max_punkty=$((max_punkty + 2))
 
 ufw_incoming_default=$(ufw status verbose | awk -F',' '$1~/Default/ {print $1}' | awk '{print $2}')
 
-if [[ "$ufw_incoming_default" == "deny" ]]; then
+if [[ "$ufw_incoming_default" == "deny" || "$ufw_incoming_default" == "reject" ]]; then
   echo "UFW incoming default jest ustawione na deny (zgodnie z wymaganiami CIS)"
   punkty=$((punkty + 2))
 else
