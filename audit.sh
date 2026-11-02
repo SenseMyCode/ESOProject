@@ -336,6 +336,37 @@ fi
 
 max_punkty=$((max_punkty + 2))
 
+# czy moduł usb-storage istnieje na dysku (w którymkolwiek zainstalowanym jądrze)
+usb_mod_exists=""
+while IFS= read -r mod_path; do
+  if [ -d "$mod_path/usb/storage" ] && [ -n "$(ls -A "$mod_path/usb/storage")" ]; then
+    usb_mod_exists="tak"
+  fi
+done < <(readlink -e /usr/lib/modules/*/kernel/drivers || readlink -e /lib/modules/*/kernel/drivers)
+
+if [[ -z "$usb_mod_exists" ]]; then
+  echo "1.1.1.10 Moduł usb-storage nie istnieje w systemie (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  # czy moduł nie jest teraz załadowany
+  if ! lsmod | grep -Pq -- '^usb(_|-)storage\b'; then
+    echo "1.1.1.10 Moduł usb-storage nie jest załadowany (zgodne z wymaganiami CIS)"
+    punkty=$((punkty + 1))
+  else
+    echo "1.1.1.10 Moduł usb-storage jest załadowany (niezgodne z wymaganiami CIS)"
+  fi
+
+  # czy w konfiguracji modprobe są obie blokady: blacklist i install /bin/false
+  usb_config=$(modprobe --showconfig | grep -P -- '\b(install|blacklist)\h+usb_storage\b')
+  if grep -Pq -- '^\h*blacklist\h+usb_storage\b' <<< "$usb_config" && \
+     grep -Pq -- '^\h*install\h+usb_storage\h+/bin/(false|true)\b' <<< "$usb_config"; then
+    echo "1.1.1.10 Moduł usb-storage jest zablokowany (blacklist + install) (zgodne z wymaganiami CIS)"
+    punkty=$((punkty + 1))
+  else
+    echo "1.1.1.10 Brak blacklist lub install dla usb_storage (niezgodne z wymaganiami CIS)"
+  fi
+fi
+
 
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
