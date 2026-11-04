@@ -266,6 +266,42 @@ else
     fail=$((fail + 1))
 fi
 
+# 2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
+# Zwykły użytkownik nie może odczytać /etc/crontab
+
+if ! ssh "$VM" 'test -f /etc/crontab'; then
+    echo "FAIL: Brak pliku /etc/crontab"
+    fail=$((fail + 1))
+else
+    wynik=$(ssh "$VM" 'cat /etc/crontab > /dev/null 2>&1 && echo CZYTA || echo ODMOWA')
+    if [[ "$wynik" == "ODMOWA" ]]; then
+        echo "OK: Zwykły użytkownik nie może odczytać /etc/crontab"
+        ok=$((ok + 1))
+    elif [[ "$wynik" == "CZYTA" ]]; then
+        echo "FAIL: Zwykły użytkownik może odczytać /etc/crontab"
+        fail=$((fail + 1))
+    else
+        echo "FAIL: Nieoczekiwany wynik testu crontab: $wynik"
+        fail=$((fail + 1))
+    fi
+fi
+
+# 5.4.3.3 Ensure default user umask is configured (Automated)
+# Plik utworzony przez użytkownika w powłoce logowania ma mieć 640 (inni nie mają dostępu)
+
+wynik=$(ssh "$VM" 'bash -lc "rm -f /tmp/cis_umask; touch /tmp/cis_umask && stat -c %a /tmp/cis_umask; rm -f /tmp/cis_umask"' 2>&1)
+
+if [[ "$wynik" =~ ^[0-7]{3}$ ]] && (( (8#$wynik & 8#007) == 0 )); then
+    echo "OK: Nowy plik użytkownika ma uprawnienia $wynik (brak dostępu dla innych)"
+    ok=$((ok + 1))
+elif [[ "$wynik" =~ ^[0-7]{3}$ ]]; then
+    echo "FAIL: Nowy plik użytkownika ma uprawnienia $wynik (inni mają dostęp)"
+    fail=$((fail + 1))
+else
+    echo "FAIL: Nieoczekiwany wynik testu umask: $wynik"
+    fail=$((fail + 1))
+fi
+
 # 3.3.1.8 / 3.3.1.16 / 3.3.1.18 - parametry jądra po restarcie
 # Restart VM i sprawdzenie czy wartości przetrwały (wcześniej nadpisywał je plik UFW)
 # boot_id zmienia się przy każdym starcie - dowód, że VM naprawdę się zrestartowała

@@ -275,6 +275,7 @@ starcie systemu
 
 Domyślnie jest 0644 lub 0444, czytać może każdy
 
+
 1.1.1.10 Ensure usb-storage kernel module is not available
 
 Sterowniki do obługi sprzętu są w osobnych plikach, ładują się dopiero
@@ -294,4 +295,24 @@ modprobe uruchamia /bin/false który od razu kończy się błędem
 Blacklist by nie wystarczył bo administrator albo atakujący z sudo nadal
 może załadować moduł ręcznie, install to zamyka
 
-NIE ZROBIŁEŚ AUDYTU
+
+2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
+
+crontab to systemowa lista zadań crona, czyli tego co system uruchamia sam o określonych porach
+CIS chce zeby wlascicielem byl root:root a grupa i inni nie mieli zadnych praw
+Domyślnie 644 więc każdy użytkownik może go czytać
+
+Odczyt - atakujący widzi co i kiedy uruchamia się jako root. To mapa celów
+Jeśli zadanie roota uruchamia skrypt który uzytkownik moze edytowac to prosta droga do eskalacji uprawnien
+Zapis - kto m oze pisac do crontaba ten moze dopisac wlasne polecenie ktore wykona sie jako root
+
+
+5.4.3.3 Ensure default user umask is configured (Automated)
+
+Umask - nowy plik chciałby mieć 666, a nowy katalog 777. Umask to maska bitów które są z tego zabierane
+CIS wymaga umaski 027 lub bardziej restrykcyjnej ustawionej w 2 miejscach /etc/profile.d i /etc/login.defs
+Przy umask 022 każdy plik który utworzymy jest od razu czytelny dla kazdego uzytkownika, z 027 inni uzytkownicy
+nie maja dostepu dopóki ktoś nie zrobi chmod
+
+Dwa miejsca ponieważ profile.d działą w powłoce logowania i ma najwyzszy priorytet
+a login.defs jest czytany przez pam_umask oraz przez useradd

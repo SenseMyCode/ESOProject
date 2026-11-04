@@ -132,6 +132,33 @@ install usb_storage /bin/false
 blacklist usb_storage
 EOF
 
+# 2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
+if dpkg-query -s cron &>/dev/null; then
+  chown root:root /etc/crontab || exit 1
+  chmod og-rwx /etc/crontab || exit 1
+fi
+
+# 5.4.3.3 Ensure default user umask is configured (Automated)
+UMASK_FILE="/etc/profile.d/60-cis-umask.sh"
+
+for plik in /etc/profile.d/*.sh; do
+  if [[ -f "$plik" && "$plik" != "$UMASK_FILE" ]]; then
+    sed -ri '/^\s*umask\s+0?(0[01][0-7]|0[0-7][^7]|[^0][0-7][07])(\s*|\s+.*)$/s/^/# /' "$plik"
+  fi
+done
+
+cat > "$UMASK_FILE" <<'EOF' || exit 1
+# CIS 5.4.3.3 - domyślny umask: nowe pliki 640, katalogi 750
+umask 027
+EOF
+chmod 644 "$UMASK_FILE"
+
+if grep -Eq '^\s*UMASK\s' /etc/login.defs; then
+  sed -ri 's/^\s*UMASK\s+.*/UMASK\t\t027/' /etc/login.defs
+else
+  echo -e "UMASK\t\t027" >> /etc/login.defs
+fi
+
 #wyłączam moduł usb-storage, jeśli jest załadowany
 modprobe -r usb-storage 2>/dev/null
 rmmod usb-storage 2>/dev/null

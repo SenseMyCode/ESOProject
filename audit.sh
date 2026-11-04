@@ -367,6 +367,64 @@ else
   fi
 fi
 
+# 2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
 
+# 2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
+max_punkty=$((max_punkty + 2))
+
+if ! dpkg-query -s cron &>/dev/null; then
+  echo "2.4.1.2 cron nie jest zainstalowany - zalecenie nie dotyczy (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  crontab_mode=$(stat -Lc '%a' /etc/crontab)
+  crontab_owner=$(stat -Lc '%u:%g' /etc/crontab)
+
+  if [[ -n "$crontab_mode" ]] && (( (8#$crontab_mode & 8#077) == 0 )); then
+    echo "2.4.1.2 Uprawnienia /etc/crontab: $crontab_mode (zgodne z wymaganiami CIS)"
+    punkty=$((punkty + 1))
+  else
+    echo "2.4.1.2 Uprawnienia /etc/crontab: ${crontab_mode:-brak pliku}, grupa i inni nie mogą mieć praw (niezgodne z wymaganiami CIS)"
+  fi
+
+  if [[ "$crontab_owner" == "0:0" ]]; then
+    echo "2.4.1.2 Właściciel /etc/crontab: root:root (zgodne z wymaganiami CIS)"
+    punkty=$((punkty + 1))
+  else
+    echo "2.4.1.2 Właściciel /etc/crontab: ${crontab_owner:-brak pliku}, wymagany root:root (niezgodne z wymaganiami CIS)"
+  fi
+fi
+
+# 5.4.3.3 Ensure default user umask is configured (Automated)
+max_punkty=$((max_punkty + 2))
+
+# umask w plikach /etc/profile.d/*.sh 
+umask_profile=$(grep -Phi -- '^\h*umask\h+[0-7]+' /etc/profile.d/*.sh 2>/dev/null | awk '{print $2}')
+umask_profile_ok="tak"
+
+if [[ -z "$umask_profile" ]]; then
+  umask_profile_ok=""
+fi
+for wartosc in $umask_profile; do
+  if (( (8#$wartosc & 8#027) != 8#027 )); then
+    umask_profile_ok=""
+  fi
+done
+
+if [[ -n "$umask_profile_ok" ]]; then
+  echo "5.4.3.3 umask w /etc/profile.d: $(echo $umask_profile) (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "5.4.3.3 umask w /etc/profile.d: ${umask_profile:-brak}, wymagane 027 lub bardziej restrykcyjne (niezgodne z wymaganiami CIS)"
+fi
+
+# UMASK w /etc/login.defs
+umask_logindefs=$(grep -Pi -- '^\h*UMASK\h+[0-7]+' /etc/login.defs | tail -n 1 | awk '{print $2}')
+
+if [[ -n "$umask_logindefs" ]] && (( (8#$umask_logindefs & 8#027) == 8#027 )); then
+  echo "5.4.3.3 UMASK w /etc/login.defs: $umask_logindefs (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "5.4.3.3 UMASK w /etc/login.defs: ${umask_logindefs:-brak}, wymagane 027 lub bardziej restrykcyjne (niezgodne z wymaganiami CIS)"
+fi
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
