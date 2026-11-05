@@ -334,6 +334,23 @@ else
     fi
 fi
 
+# 1.6.2 Ensure /etc/issue is configured (Automated)
+# Baner przed logowaniem (tak jak wyświetli go konsola) nie ujawnia systemu ani wersji jądra
+
+wynik=$(ssh "$VM" 'baner=$(agetty --show-issue 2>/dev/null) || { echo BLAD; exit; }
+if echo "$baner" | grep -qiF -e "$(uname -r)" -e "ubuntu"; then echo UJAWNIA; else echo OK; fi')
+
+if [[ "$wynik" == "OK" ]]; then
+    echo "OK: Baner przed logowaniem nie ujawnia systemu ani wersji jądra"
+    ok=$((ok + 1))
+elif [[ "$wynik" == "UJAWNIA" ]]; then
+    echo "FAIL: Baner przed logowaniem ujawnia system lub wersję jądra"
+    fail=$((fail + 1))
+else
+    echo "FAIL: Nie udało się wyświetlić banera (agetty --show-issue): $wynik"
+    fail=$((fail + 1))
+fi
+
 # Wynik testów
 
 echo "Wynik: $ok OK, $fail FAIL"

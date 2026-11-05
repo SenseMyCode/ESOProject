@@ -163,6 +163,12 @@ fi
 modprobe -r usb-storage 2>/dev/null
 rmmod usb-storage 2>/dev/null
 
+# 1.6.2 Ensure /etc/issue is configured (Automated)
+cat > /etc/issue <<'EOF' || exit 1
+Authorized users only. All activity may be monitored and reported.
+
+EOF
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)

@@ -427,4 +427,16 @@ else
   echo "5.4.3.3 UMASK w /etc/login.defs: ${umask_logindefs:-brak}, wymagane 027 lub bardziej restrykcyjne (niezgodne z wymaganiami CIS)"
 fi
 
+# 1.6.2 Ensure /etc/issue is configured (Automated)
+max_punkty=$((max_punkty + 2))
+
+issue_zle=$(grep -Psi "(\\\v|\\\r|\\\m|\\\s|\b$(grep '^ID=' /etc/os-release | cut -d= -f2 | sed -e 's/"//g')\b)" /etc/issue /usr/lib/issue.d/* /etc/issue.d/* /run/issue.d/* 2>/dev/null)
+
+if [[ -z "$issue_zle" ]]; then
+  echo "1.6.2 /etc/issue nie zawiera informacji o systemie (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  echo "1.6.2 /etc/issue zawiera informacje o systemie: $issue_zle (niezgodne z wymaganiami CIS)"
+fi
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
