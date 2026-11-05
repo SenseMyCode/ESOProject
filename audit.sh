@@ -439,4 +439,27 @@ else
   echo "1.6.2 /etc/issue zawiera informacje o systemie: $issue_zle (niezgodne z wymaganiami CIS)"
 fi
 
+# 5.4.1.1 Ensure password expiration is configured (Automated)
+max_punkty=$((max_punkty + 2))
+
+# PASS_MAX_DAYS w /etc/login.defs (dla nowych kont)
+pass_max_days=$(grep -Pi -- '^\h*PASS_MAX_DAYS\h+\d+\b' /etc/login.defs | tail -n 1 | awk '{print $2}')
+
+if [[ -n "$pass_max_days" && "$pass_max_days" -ge 1 && "$pass_max_days" -le 365 ]]; then
+  echo "5.4.1.1 PASS_MAX_DAYS w /etc/login.defs = $pass_max_days (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "5.4.1.1 PASS_MAX_DAYS w /etc/login.defs = ${pass_max_days:-brak}, wymagane 1-365 (niezgodne z wymaganiami CIS)"
+fi
+
+# istniejące konta z hasłem w /etc/shadow (polecenie z CIS - wynik = niezgodność)
+shadow_zle=$(awk -F: '($2~/^\$.+\$/) {if($5 > 365 || $5 < 1)print $1 "(" $5 ")"}' /etc/shadow)
+
+if [[ -z "$shadow_zle" ]]; then
+  echo "5.4.1.1 Wszystkie konta z hasłem mają maksymalny wiek hasła 1-365 dni (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 1))
+else
+  echo "5.4.1.1 Konta z niezgodnym maksymalnym wiekiem hasła: $(echo $shadow_zle) (niezgodne z wymaganiami CIS)"
+fi
+
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

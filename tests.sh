@@ -302,6 +302,39 @@ else
     fail=$((fail + 1))
 fi
 
+# 1.6.2 Ensure /etc/issue is configured (Automated)
+# Baner przed logowaniem (tak jak wyświetli go konsola) nie ujawnia systemu ani wersji jądra
+
+wynik=$(ssh "$VM" 'baner=$(agetty --show-issue 2>/dev/null) || { echo BLAD; exit; }
+if echo "$baner" | grep -qiF -e "$(uname -r)" -e "ubuntu"; then echo UJAWNIA; else echo OK; fi')
+
+if [[ "$wynik" == "OK" ]]; then
+    echo "OK: Baner przed logowaniem nie ujawnia systemu ani wersji jądra"
+    ok=$((ok + 1))
+elif [[ "$wynik" == "UJAWNIA" ]]; then
+    echo "FAIL: Baner przed logowaniem ujawnia system lub wersję jądra"
+    fail=$((fail + 1))
+else
+    echo "FAIL: Nie udało się wyświetlić banera (agetty --show-issue): $wynik"
+    fail=$((fail + 1))
+fi
+
+# 5.4.1.1 Ensure password expiration is configured (Automated)
+# Moje konto ma maksymalny wiek hasła 1-365 dni (data wygaśnięcia jest ustawiona)
+
+wynik=$(ssh "$VM" 'chage -l "$USER" 2>/dev/null | grep -i "^Maximum number of days" | cut -d: -f2 | xargs')
+
+if [[ "$wynik" =~ ^[0-9]+$ ]] && [[ "$wynik" -ge 1 && "$wynik" -le 365 ]]; then
+    echo "OK: Hasło użytkownika wygasa po $wynik dniach"
+    ok=$((ok + 1))
+elif [[ "$wynik" =~ ^[0-9]+$ ]]; then
+    echo "FAIL: Hasło użytkownika wygasa po $wynik dniach (więcej niż 365)"
+    fail=$((fail + 1))
+else
+    echo "FAIL: Nie udało się odczytać ważności hasła: ${wynik:-brak wyniku}"
+    fail=$((fail + 1))
+fi
+
 # 3.3.1.8 / 3.3.1.16 / 3.3.1.18 - parametry jądra po restarcie
 # Restart VM i sprawdzenie czy wartości przetrwały (wcześniej nadpisywał je plik UFW)
 # boot_id zmienia się przy każdym starcie - dowód, że VM naprawdę się zrestartowała
@@ -332,23 +365,6 @@ else
         echo "FAIL: Po restarcie (accept_redirects log_martians tcp_syncookies): $wynik, oczekiwano 0 1 1"
         fail=$((fail + 1))
     fi
-fi
-
-# 1.6.2 Ensure /etc/issue is configured (Automated)
-# Baner przed logowaniem (tak jak wyświetli go konsola) nie ujawnia systemu ani wersji jądra
-
-wynik=$(ssh "$VM" 'baner=$(agetty --show-issue 2>/dev/null) || { echo BLAD; exit; }
-if echo "$baner" | grep -qiF -e "$(uname -r)" -e "ubuntu"; then echo UJAWNIA; else echo OK; fi')
-
-if [[ "$wynik" == "OK" ]]; then
-    echo "OK: Baner przed logowaniem nie ujawnia systemu ani wersji jądra"
-    ok=$((ok + 1))
-elif [[ "$wynik" == "UJAWNIA" ]]; then
-    echo "FAIL: Baner przed logowaniem ujawnia system lub wersję jądra"
-    fail=$((fail + 1))
-else
-    echo "FAIL: Nie udało się wyświetlić banera (agetty --show-issue): $wynik"
-    fail=$((fail + 1))
 fi
 
 # Wynik testów

@@ -169,6 +169,24 @@ Authorized users only. All activity may be monitored and reported.
 
 EOF
 
+# 5.4.1.1 Ensure password expiration is configured (Automated)
+
+# nowe konta: PASS_MAX_DAYS 365 w /etc/login.defs (podmiana albo dopisanie)
+if grep -Eq '^\s*PASS_MAX_DAYS\s' /etc/login.defs; then
+  sed -ri 's/^\s*PASS_MAX_DAYS\s+.*/PASS_MAX_DAYS\t365/' /etc/login.defs
+else
+  echo -e "PASS_MAX_DAYS\t365" >> /etc/login.defs
+fi
+
+# zabezpieczenie (ostrzeżenie z CIS): konto z pustą lub zerową datą ostatniej zmiany
+#    dostałoby natychmiast wygasłe hasło - ustawiam datę ostatniej zmiany na dziś
+for konto in $(awk -F: '($2~/^\$.+\$/) && ($3 == "" || $3 == 0) {print $1}' /etc/shadow); do
+  chage -d "$(date +%Y-%m-%d)" "$konto"
+done
+
+# istniejące konta z hasłem: max 365 dni (polecenie z CIS)
+awk -F: '($2~/^\$.+\$/) {if($5 > 365 || $5 < 1) system("chage --maxdays 365 " $1)}' /etc/shadow
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)
