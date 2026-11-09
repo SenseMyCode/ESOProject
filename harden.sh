@@ -187,6 +187,20 @@ done
 # istniejące konta z hasłem: max 365 dni (polecenie z CIS)
 awk -F: '($2~/^\$.+\$/) {if($5 > 365 || $5 < 1) system("chage --maxdays 365 " $1)}' /etc/shadow
 
+# 1.5.7 Ensure Automatic Error Reporting is configured (Automated)
+if dpkg-query -s apport &>/dev/null; then
+  # enabled=0 w /etc/default/apport (podmiana albo dopisanie)
+  if grep -Eq '^\s*enabled\s*=' /etc/default/apport; then
+    sed -ri 's/^\s*enabled\s*=.*/enabled=0/' /etc/default/apport
+  else
+    echo "enabled=0" >> /etc/default/apport
+  fi
+
+  # zatrzymanie i zablokowanie usługi (mask = nie da się jej uruchomić nawet ręcznie)
+  systemctl stop apport.service
+  systemctl mask apport.service
+fi
+
 # 4.1.2 Ensure ufw service is configured (Automated) NA SAMYM KOŃCU HARDEN!!!!!!!!!!!!!!!!!!!!!!!!!!
 ufw allow 22/tcp
 ufw default deny incoming             # 4.1.3 Ensure ufw incoming default is configured (Automated)

@@ -460,6 +460,32 @@ if [[ -z "$shadow_zle" ]]; then
   punkty=$((punkty + 1))
 else
   echo "5.4.1.1 Konta z niezgodnym maksymalnym wiekiem hasła: $(echo $shadow_zle) (niezgodne z wymaganiami CIS)"
+# 1.5.7 Ensure Automatic Error Reporting is configured (Automated)
+max_punkty=$((max_punkty + 2))
+
+if ! dpkg-query -s apport &>/dev/null; then
+  echo "1.5.7 Apport nie jest zainstalowany (zgodne z wymaganiami CIS)"
+  punkty=$((punkty + 2))
+else
+  # enabled w /etc/default/apport (wynik = niezgodność)
+  apport_enabled=$(grep -Psi -- '^\h*enabled\h*=\h*[^0]\b' /etc/default/apport)
+
+  if [[ -z "$apport_enabled" ]]; then
+    echo "1.5.7 Apport jest wyłączony w /etc/default/apport (zgodne z wymaganiami CIS)"
+    punkty=$((punkty + 1))
+  else
+    echo "1.5.7 Apport jest włączony w /etc/default/apport: $apport_enabled (niezgodne z wymaganiami CIS)"
+  fi
+
+  # usługa apport nie może być aktywna
+  apport_active=$(systemctl is-active apport.service 2>/dev/null)
+
+  if [[ "$apport_active" != "active" ]]; then
+    echo "1.5.7 Usługa apport ma stan ${apport_active:-brak} (zgodne z wymaganiami CIS)"
+    punkty=$((punkty + 1))
+  else
+    echo "1.5.7 Usługa apport jest aktywna (niezgodne z wymaganiami CIS)"
+  fi
 fi
 
 echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"

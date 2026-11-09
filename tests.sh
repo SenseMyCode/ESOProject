@@ -367,6 +367,28 @@ else
     fi
 fi
 
+# 1.5.7 Ensure Automatic Error Reporting is configured (Automated)
+# Root próbuje uruchomić apport - przy masked ma się nie udać
+
+if ! ssh "$VM" 'dpkg-query -s apport > /dev/null 2>&1'; then
+    echo "OK: Apport nie jest zainstalowany"
+    ok=$((ok + 1))
+else
+    ssh -t "$VM" 'sudo systemctl start apport.service' > /dev/null 2>&1
+    wynik=$(ssh "$VM" 'echo "$(systemctl is-active apport.service) $(systemctl is-enabled apport.service 2>/dev/null)"')
+
+    if [[ "$wynik" == "inactive masked" ]]; then
+        echo "OK: Apport jest zablokowany (masked) i nie da się go uruchomić"
+        ok=$((ok + 1))
+    elif [[ "$wynik" == active* ]]; then
+        echo "FAIL: Apport działa po próbie uruchomienia ($wynik)"
+        fail=$((fail + 1))
+    else
+        echo "FAIL: Nieoczekiwany stan Apport (aktywność, włączenie): $wynik"
+        fail=$((fail + 1))
+    fi
+fi
+
 # Wynik testów
 
 echo "Wynik: $ok OK, $fail FAIL"

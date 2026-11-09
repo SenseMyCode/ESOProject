@@ -31,6 +31,6 @@ Trudność w skali: 1 – łatwe, 2 – średnie, 3 – trudne, 5 – bardzo tru
 | 5.4.1.1 | Maksymalny okres ważności hasła | Polityka haseł | L1 | 2 | X |
 | 5.4.3.2 | Automatyczne wylogowanie nieaktywnej powłoki | Konta i uwierzytelnianie | L1 | 1 | X |
 | 5.4.3.3 | Domyślna maska uprawnień nowych plików (umask 027) | Konta i uwierzytelnianie | L1 | 2 | X |
-| 6.3.1 | Zainstalowany AIDE do kontroli integralności plików | Audyt i logowanie | L1 | 3 | X |
+| 1.5.7 | wyłączenie automatycznego raportowania błędów (Apport) |  | L1 | 1 | X |
 
 Łącznie: 21 zaleceń, 30 punktów trudności.

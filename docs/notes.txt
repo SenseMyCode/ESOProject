@@ -319,14 +319,19 @@ a login.defs jest czytany przez pam_umask oraz przez useradd
 
 1.6.2
 /etc/issue – tekst wyświetlany przed logowaniem
-Wersja systemu i jądra nie powinna być leakowane jeszcze przed logowaniem. Zalogowany użytkownik i tak jest w stanie sprawdzić tą informację poleceniem uname -a
+Wersja systemu i jądra nie powinna być leakowane jeszcze przed logowaniem. 
+Zalogowany użytkownik i tak jest w stanie sprawdzić tą informację poleceniem uname -a
 
 5.4.1.1
-Hasło powinno wygasać najpóźniej po 265 dniach ustawione w dwóch miejscach PASS_MAX_DAYS in /etc/login.defs (dla nowych kont tworzonych przez useradd) i pole 5 w /etc/shadow dla każdego konta (istniejące)
+Hasło powinno wygasać najpóźniej po 265 dniach ustawione w dwóch miejscach PASS_MAX_DAYS in /etc/login.defs 
+(dla nowych kont tworzonych przez useradd) i pole 5 w /etc/shadow dla każdego konta (istniejące)
 Jęsli hasło wycieknie to atakujący ma ograniczony czas na użycie
 Zbyt częste wymuszanie zmian szkodzi, wybierane hasła są bardziej przewidywalne. Natychmiastowa zmiana hasła przy konkretnym wydarzeniu
 
-6.3.1 AIDE (kontrola integralności plików
-AIDE (Advanced Intrusion Detection Environment) robi snapshot (?) system plików, dla każdego ważnego zapisuje hash, uprawnienia, ownera i datę modyfikacji. Następnie aide –check porównuje aktualny stan z bazą
-CIS wymaga tylko instalacji pakietów aide i aide-common
-Why? – atakujący po włamaniu może podmienić pliki systemowe żeby zostawić backdoor a aide to wykrywa, nie zatrzyma ataku ale pokaże że do niego doszło
+1.5.7 wyłączone automatyczne raportowanie błędów
+Apport to usługa ubuntu która po awarii programu automatycznie zbiera dane o awarii: zrzut pamięci procesu,
+stos wywołań i fragmenty logów. Zapisuje je w /var/crash/ i proponuje wysłanie raportu do Ubuntu
+
+Zrzut pamięci to kopia wszystkiego co program miał w pamięci, mogą być tam hasła, klucze, numery kart, dane klientów
+Takie pliki leżą na dysku i mogą być wysłane poza firmę. 
+
