@@ -1,0 +1,23 @@
+nr_cis;zalecenie;punkty;max_punkty;status
+5.1.20;"Ensure sshd PermitRootLogin is disabled";2;2;zgodne
+5.1.16;"Ensure sshd MaxAuthTries is configured";2;2;zgodne
+5.1.7;"Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured";2;2;zgodne
+5.1.4;"Ensure sshd access is configured";2;2;zgodne
+4.1.2;"Ensure ufw service is configured";2;3;częściowo
+4.1.3;"Ensure ufw incoming default is configured";0;2;niezgodne
+3.3.1.8;"Ensure net.ipv4.conf.all.accept_redirects is configured";2;2;zgodne
+3.3.1.16;"Ensure net.ipv4.conf.all.log_martians is configured";2;2;zgodne
+3.3.1.18;"Ensure net.ipv4.tcp_syncookies is configured";2;2;zgodne
+5.2.3;"Ensure sudo log file exists";2;2;zgodne
+5.2.7;"Ensure access to the su command is restricted";2;2;zgodne
+2.3.1.1;"Ensure a single time synchronization daemon is in use";2;2;zgodne
+5.4.3.2;"Ensure default user shell timeout is configured";0;2;niezgodne
+5.1.13;"Ensure sshd LoginGraceTime is configured";2;2;zgodne
+1.4.2;"Ensure access to bootloader config is configured";2;2;zgodne
+1.1.1.10;"Ensure usb-storage kernel module is not available";1;2;częściowo
+2.4.1.2;"Ensure access to /etc/crontab is configured";1;2;częściowo
+5.4.3.3;"Ensure default user umask is configured";0;2;niezgodne
+1.6.2;"Ensure /etc/issue is configured";0;2;niezgodne
+5.4.1.1;"Ensure password expiration is configured";0;2;niezgodne
+1.5.7;"Ensure Automatic Error Reporting is configured";0;2;niezgodne
+SUMA;"Wynik audytu (po)";28;43;65%
