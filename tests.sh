@@ -4,6 +4,10 @@ VM="cisvm"
 ok=0
 fail=0
 
+# Adres i port VM odczytane z konfiguracji ssh (~/.ssh/config) - bez wpisywania na sztywno
+VM_HOST=$(ssh -G "$VM" | awk '$1 == "hostname" {print $2}')
+VM_PORT=$(ssh -G "$VM" | awk '$1 == "port" {print $2}')
+
 # 5.1.20 Ensure sshd PermitRootLogin is disabled
 
 # Test 1 Zwykły użytkownik może zalogować się przez SSH
@@ -17,27 +21,50 @@ else
     exit 1
 fi
 
-# Test 2 Root nie może się zalogować przez ssh nawet z kluczem
+# Test 2 Root nie może się zalogować przez ssh nawet z kluczem - blokuje to PermitRootLogin
+# Na głównym serwerze roota odrzuciłoby już AllowUsers (5.1.4), więc test nic by nie dowodził.
+# Dlatego na VM uruchamiam drugi, tymczasowy sshd (port 2299, tylko localhost) z tą samą
+# konfiguracją, ale z AllowUsers=root. Wtedy jedyne, co może zatrzymać roota, to PermitRootLogin.
+# Łączę się przez VM jako jump host, a w logu tymczasowego sshd szukam "ROOT LOGIN REFUSED".
 
-if ! ssh -t "$VM" 'sudo mkdir -p /root/.ssh && sudo cp ~/.ssh/authorized_keys /root/.ssh/authorized_keys'; then
-    echo "FAIL: Nie udało się przygotować testu 2 (kopiowanie klucza dla roota)"
+ssh -t "$VM" 'rm -f /tmp/cis_wynik
+sudo mkdir -p /root/.ssh && sudo cp ~/.ssh/authorized_keys /root/.ssh/authorized_keys &&
+sudo rm -f /tmp/cis_sshd_test.log &&
+sudo /usr/sbin/sshd -p 2299 -o ListenAddress=127.0.0.1 -o AllowUsers=root \
+  -o PidFile=/run/cis_sshd_test.pid -E /tmp/cis_sshd_test.log && echo GOTOWE > /tmp/cis_wynik'
+
+if [[ "$(ssh "$VM" 'cat /tmp/cis_wynik 2>/dev/null')" != "GOTOWE" ]]; then
+    echo "FAIL: Nie udało się przygotować testu 2 (klucz roota / tymczasowy sshd)"
     fail=$((fail + 1))
 else
-    wynik=$(ssh -o BatchMode=yes -o ConnectTimeout=5 -l root "$VM" 'echo OK' 2>&1)
+    sleep 1
+    wynik=$(ssh -o BatchMode=yes -o ConnectTimeout=5 -J "$VM" \
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -p 2299 root@127.0.0.1 'echo OK' 2>&1)
 
-    if echo "$wynik" | grep -q 'Permission denied'; then
-        echo "OK: Root nie może zalogować się przez SSH"
-        ok=$((ok + 1))
-    elif echo "$wynik" | grep -q '^OK$'; then
+    # zatrzymanie tymczasowego sshd, sprawdzenie logu i sprzątanie
+    ssh -t "$VM" 'rm -f /tmp/cis_wynik
+sudo kill "$(sudo cat /run/cis_sshd_test.pid)" 2>/dev/null
+if sudo grep -q "ROOT LOGIN REFUSED" /tmp/cis_sshd_test.log; then echo ODMOWA_ROOT > /tmp/cis_wynik
+elif sudo grep -q "not listed in AllowUsers" /tmp/cis_sshd_test.log; then echo ALLOWUSERS > /tmp/cis_wynik
+else echo BRAK > /tmp/cis_wynik; fi
+sudo rm -f /tmp/cis_sshd_test.log /root/.ssh/authorized_keys'
+    log=$(ssh "$VM" 'cat /tmp/cis_wynik 2>/dev/null; rm -f /tmp/cis_wynik')
+
+    if echo "$wynik" | grep -q '^OK$'; then
         echo "FAIL: Root zalogował się przez SSH kluczem"
+        fail=$((fail + 1))
+    elif [[ "$log" == "ODMOWA_ROOT" ]]; then
+        echo "OK: Root nie może zalogować się przez SSH (odrzucony przez PermitRootLogin)"
+        ok=$((ok + 1))
+    elif [[ "$log" == "ALLOWUSERS" ]]; then
+        echo "FAIL: Roota odrzuciło AllowUsers, a nie PermitRootLogin - test nie rozstrzyga"
         fail=$((fail + 1))
     else
         echo "FAIL: Błąd testu: $wynik"
         fail=$((fail + 1))
     fi
 fi
-
-ssh -t "$VM" 'sudo rm -f /root/.ssh/authorized_keys'
 
 # 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
 
@@ -74,7 +101,7 @@ fi
 # Otwieram połączenie TCP do SSH i nic nie wysyłam - serwer ma je zamknąć najpóźniej po 60 s
 
 start=$SECONDS
-timeout 130 bash -c 'exec 3<>/dev/tcp/127.0.0.1/2222 && cat <&3 > /dev/null' 2>/dev/null
+timeout 130 bash -c 'exec 3<>"/dev/tcp/$1/$2" && cat <&3 > /dev/null' _ "$VM_HOST" "$VM_PORT" 2>/dev/null
 czas=$((SECONDS - start))
 
 if [[ "$czas" -lt 5 ]]; then
@@ -159,7 +186,7 @@ if [[ "$(ssh "$VM" 'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080
     echo "FAIL: Nie udało się uruchomić serwera testowego na porcie 8080"
     fail=$((fail + 1))
 else
-    curl -s --max-time 5 -o /dev/null http://127.0.0.1:8080/
+    curl -s --max-time 5 -o /dev/null "http://$VM_HOST:8080/"
     kod=$?
     if [[ "$kod" -eq 0 ]]; then
         echo "FAIL: Port 8080 bez reguły allow jest osiągalny z zewnątrz"
@@ -239,7 +266,8 @@ if ! ssh "$VM" 'modinfo usb-storage > /dev/null 2>&1'; then
     echo "FAIL: Brak modułu usb-storage w systemie (test niemożliwy)"
     fail=$((fail + 1))
 else
-    ssh -t "$VM" 'sudo modprobe usb-storage' > /dev/null 2>&1
+    # przekierowanie wyjścia po stronie VM - prośba o hasło sudo idzie na terminal i jest widoczna
+    ssh -t "$VM" 'sudo modprobe usb-storage > /dev/null 2>&1'
     wynik=$(ssh "$VM" 'lsmod | grep -q "^usb_storage" && echo ZALADOWANY || echo BRAK')
     if [[ "$wynik" == "BRAK" ]]; then
         echo "OK: Próba załadowania usb-storage nie powiodła się"
@@ -335,6 +363,29 @@ else
     fail=$((fail + 1))
 fi
 
+# 1.5.7 Ensure Automatic Error Reporting is configured (Automated)
+# Root próbuje uruchomić apport - przy masked ma się nie udać
+
+if ! ssh "$VM" 'dpkg-query -s apport > /dev/null 2>&1'; then
+    echo "OK: Apport nie jest zainstalowany"
+    ok=$((ok + 1))
+else
+    # przekierowanie wyjścia po stronie VM - prośba o hasło sudo idzie na terminal i jest widoczna
+    ssh -t "$VM" 'sudo systemctl start apport.service > /dev/null 2>&1'
+    wynik=$(ssh "$VM" 'echo "$(systemctl is-active apport.service) $(systemctl is-enabled apport.service 2>/dev/null)"')
+
+    if [[ "$wynik" == "inactive masked" ]]; then
+        echo "OK: Apport jest zablokowany (masked) i nie da się go uruchomić"
+        ok=$((ok + 1))
+    elif [[ "$wynik" == active* ]]; then
+        echo "FAIL: Apport działa po próbie uruchomienia ($wynik)"
+        fail=$((fail + 1))
+    else
+        echo "FAIL: Nieoczekiwany stan Apport (aktywność, włączenie): $wynik"
+        fail=$((fail + 1))
+    fi
+fi
+
 # 3.3.1.8 / 3.3.1.16 / 3.3.1.18 - parametry jądra po restarcie
 # Restart VM i sprawdzenie czy wartości przetrwały (wcześniej nadpisywał je plik UFW)
 # boot_id zmienia się przy każdym starcie - dowód, że VM naprawdę się zrestartowała
@@ -363,28 +414,6 @@ else
         ok=$((ok + 1))
     else
         echo "FAIL: Po restarcie (accept_redirects log_martians tcp_syncookies): $wynik, oczekiwano 0 1 1"
-        fail=$((fail + 1))
-    fi
-fi
-
-# 1.5.7 Ensure Automatic Error Reporting is configured (Automated)
-# Root próbuje uruchomić apport - przy masked ma się nie udać
-
-if ! ssh "$VM" 'dpkg-query -s apport > /dev/null 2>&1'; then
-    echo "OK: Apport nie jest zainstalowany"
-    ok=$((ok + 1))
-else
-    ssh -t "$VM" 'sudo systemctl start apport.service' > /dev/null 2>&1
-    wynik=$(ssh "$VM" 'echo "$(systemctl is-active apport.service) $(systemctl is-enabled apport.service 2>/dev/null)"')
-
-    if [[ "$wynik" == "inactive masked" ]]; then
-        echo "OK: Apport jest zablokowany (masked) i nie da się go uruchomić"
-        ok=$((ok + 1))
-    elif [[ "$wynik" == active* ]]; then
-        echo "FAIL: Apport działa po próbie uruchomienia ($wynik)"
-        fail=$((fail + 1))
-    else
-        echo "FAIL: Nieoczekiwany stan Apport (aktywność, włączenie): $wynik"
         fail=$((fail + 1))
     fi
 fi

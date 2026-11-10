@@ -47,8 +47,16 @@ fi
 #był jedynym miejscem które go ustawia
 UFW_SYSCTL_FILE=$(grep -E '^\s*IPT_SYSCTL=' /etc/default/ufw 2>/dev/null | cut -d= -f2)
 
-for plik in /etc/sysctl.conf /etc/sysctl.d/*.conf "$UFW_SYSCTL_FILE"; do
-  if [[ -f "$plik" && "$plik" != "/etc/sysctl.d/60-cis.conf" ]]; then
+# Tak jak w CIS: wszystkie pliki używane przez systemd-sysctl (/etc, /run, /usr/lib/sysctl.d)
+# --cat-config wypisuje nad treścią każdego pliku linię "# /ścieżka/pliku.conf"
+SYSCTL_FILES=()
+while IFS= read -r plik; do
+  plik=$(readlink -e "$plik")
+  [[ -n "$plik" ]] && SYSCTL_FILES+=("$plik")
+done < <(/usr/lib/systemd/systemd-sysctl --cat-config | grep -Po '^#\s*\K/\S+\.conf\b')
+
+for plik in /etc/sysctl.conf "$UFW_SYSCTL_FILE" "${SYSCTL_FILES[@]}"; do
+  if [[ -f "$plik" && "$(readlink -e "$plik")" != "/etc/sysctl.d/60-cis.conf" ]]; then
     sed -ri 's/^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=/# &/' "$plik"
     sed -ri 's/^\s*net[./]ipv4[./]conf[./]all[./]log_martians\s*=/# &/' "$plik"
     sed -ri 's/^\s*net[./]ipv4[./]tcp_syncookies\s*=/# &/' "$plik"
@@ -99,6 +107,7 @@ fi
 # 2.3.1.1 Ensure a single time synchronization daemon is in use. Pozbywamy się chrony bo systemd-timesyncd jest domyślnym i wystarczającym demonem synchronizacji czasu 
 if dpkg -s chrony &>/dev/null; then
   apt-get purge -y chrony
+  apt-get autoremove -y     # CIS: apt purge chrony + apt autoremove chrony
 fi
 
 systemctl unmask systemd-timesyncd.service
@@ -125,6 +134,14 @@ chmod 644 "$TMOUT_FILE"
 chown root:root /boot/grub/grub.cfg || exit 1
 chmod u-x,go-rwx /boot/grub/grub.cfg || exit 1
 
+# update-grub (grub-mkconfig) przy aktualizacji jądra/GRUB-a zapisuje grub.cfg z prawami 0444.
+# Hook apt przywraca root:root 0600 po każdej operacji dpkg (apt upgrade, unattended-upgrades).
+# Ręczne uruchomienie update-grub nadal wymaga ponownego uruchomienia harden.sh.
+cat > /etc/apt/apt.conf.d/99-cis-grub-perms <<'EOF' || exit 1
+// CIS 1.4.2 - przywrócenie uprawnień grub.cfg po aktualizacjach
+DPkg::Post-Invoke { "if [ -f /boot/grub/grub.cfg ]; then chown root:root /boot/grub/grub.cfg; chmod u-x,go-rwx /boot/grub/grub.cfg; fi"; };
+EOF
+
 # 1.1.1.10 Ensure usb-storage kernel module is not available (Automated)
 
 cat > /etc/modprobe.d/60-cis-usb-storage.conf <<'EOF' || exit 1
@@ -143,7 +160,7 @@ UMASK_FILE="/etc/profile.d/60-cis-umask.sh"
 
 for plik in /etc/profile.d/*.sh; do
   if [[ -f "$plik" && "$plik" != "$UMASK_FILE" ]]; then
-    sed -ri '/^\s*umask\s+0?(0[01][0-7]|0[0-7][^7]|[^0][0-7][07])(\s*|\s+.*)$/s/^/# /' "$plik"
+    sed -ri '/^\s*umask\s+0?(0[01][0-7]|0[0-7][^7]|[^0][0-7][0-7])(\s*|\s+.*)$/s/^/# /' "$plik"
   fi
 done
 

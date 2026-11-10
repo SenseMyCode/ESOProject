@@ -11,7 +11,39 @@ if [[ "$EUID" -ne 0 ]]; then
   exit 1
 fi
 
+# Wyniki do CSV - jeden wiersz na zalecenie, plik w katalogu results/ obok skryptu
+# Użycie: sudo ./audit.sh [etykieta]   np. sudo ./audit.sh przed   /   sudo ./audit.sh po
+etykieta="${1:-audyt}"
+results_dir="$(dirname "$(readlink -f "$0")")/results"
+csv_wiersze=()
+akt_id=""
+
+# Zamyka poprzednie zalecenie: liczy ile punktów dostało od swojego początku i zapisuje wiersz CSV
+zamknij_zalecenie() {
+  [[ -z "$akt_id" ]] && return
+  local pkt=$((punkty - akt_pkt_start)) max=$((max_punkty - akt_max_start)) status
+  if (( pkt == max )); then
+    status="zgodne"
+  elif (( pkt == 0 )); then
+    status="niezgodne"
+  else
+    status="częściowo"
+  fi
+  csv_wiersze+=("$akt_id;\"$akt_nazwa\";$pkt;$max;$status")
+  akt_id=""
+}
+
+# Początek nowego zalecenia: zapamiętuje stan liczników punktów
+zalecenie() {
+  zamknij_zalecenie
+  akt_id="$1"
+  akt_nazwa="$2"
+  akt_pkt_start=$punkty
+  akt_max_start=$max_punkty
+}
+
 # 5.1.20 Ensure sshd PermitRootLogin is disabled
+zalecenie "5.1.20" "Ensure sshd PermitRootLogin is disabled"
 max_punkty=$((max_punkty + 2))
 
 permit_root_login_value=$(sshd -T | grep "^permitrootlogin" | awk '{print $2}')
@@ -23,6 +55,7 @@ else
 fi
 
 # 5.1.16 Ensure sshd MaxAuthTries is configured (Automated)
+zalecenie "5.1.16" "Ensure sshd MaxAuthTries is configured"
 max_punkty=$((max_punkty + 2))
 
 max_auth_tries_value=$(sshd -T | grep "^maxauthtries" | awk '{print $2}')
@@ -34,6 +67,7 @@ else
 fi
 
 # 5.1.7 Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured (Automated)
+zalecenie "5.1.7" "Ensure sshd ClientAliveInterval and ClientAliveCountMax are configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -54,6 +88,7 @@ else
 fi
 
 # 5.1.4 Ensure sshd access is configured (Automated)
+zalecenie "5.1.4" "Ensure sshd access is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -70,6 +105,7 @@ else
 fi
 
 # 4.1.2 Ensure ufw service is configured (Automated)
+zalecenie "4.1.2" "Ensure ufw service is configured"
 max_punkty=$((max_punkty + 1))
 
 ufw_service_enabled=$(systemctl is-enabled ufw.service 2>/dev/null)
@@ -105,6 +141,7 @@ fi
 
 
 # 4.1.3 Ensure ufw incoming default is configured (Automated)
+zalecenie "4.1.3" "Ensure ufw incoming default is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -118,6 +155,7 @@ else
 fi
 
 # 3.3.1.8 Ensure net.ipv4.conf.all.accept_redirects is configured
+zalecenie "3.3.1.8" "Ensure net.ipv4.conf.all.accept_redirects is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -132,7 +170,7 @@ else
   echo "net.ipv4.conf.all.accept_redirects ma wartość $accept_redirects_value (niezgodne z wymaganiami CIS)"
 fi
 
-# Sprawdzenie wartości po restarcie - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Sprawdzenie wartości po restarcie
 
 accept_redirects_file=$(/usr/lib/systemd/systemd-sysctl --cat-config | grep -E '^\s*net[./]ipv4[./]conf[./]all[./]accept_redirects\s*=' | tail -n 1 | cut -d= -f2 | xargs)
 
@@ -151,7 +189,8 @@ else
   echo "net.ipv4.conf.all.accept_redirects w plikach konfiguracyjnych = ${accept_redirects_file:-brak} (niezgodne z wymaganiami CIS)"
 fi
 
-# 3.3.1.16 Ensure net.ipv4.conf.all.log_martians is configured !!!!!!!!!!!!!!!!!!!!
+# 3.3.1.16 Ensure net.ipv4.conf.all.log_martians is configured
+zalecenie "3.3.1.16" "Ensure net.ipv4.conf.all.log_martians is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -186,6 +225,7 @@ else
 fi
 
 # 3.3.1.18 Ensure net.ipv4.tcp_syncookies is configured
+zalecenie "3.3.1.18" "Ensure net.ipv4.tcp_syncookies is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -220,6 +260,7 @@ else
 fi
 
 # 5.2.3 Ensure sudo log file exists (Automated)
+zalecenie "5.2.3" "Ensure sudo log file exists"
 
 max_punkty=$((max_punkty + 2))
 
@@ -233,6 +274,7 @@ else
 fi
 
 # 5.2.7 Ensure access to the su command is restricted
+zalecenie "5.2.7" "Ensure access to the su command is restricted"
 
 max_punkty=$((max_punkty + 2))
 
@@ -255,6 +297,7 @@ else
 fi
 
 # 2.3.1.1 Ensure a single time synchronization daemon is in use
+zalecenie "2.3.1.1" "Ensure a single time synchronization daemon is in use"
 
 max_punkty=$((max_punkty + 2))
 
@@ -278,13 +321,21 @@ else
 fi
 
 # 5.4.3.2 Ensure default user shell timeout is configured
+zalecenie "5.4.3.2" "Ensure default user shell timeout is configured"
 max_punkty=$((max_punkty + 2))
 
 tmout_decl=$(bash -lc 'declare -p TMOUT' 2>/dev/null)          # np. declare -rx TMOUT="900"
 tmout_flags=$(echo "$tmout_decl" | awk '{print $2}')            # np. -rx
 tmout_value=$(echo "$tmout_decl" | grep -oP 'TMOUT="\K\d+')      # np. 900
 
-if [[ -n "$tmout_value" && "$tmout_value" -ge 1 && "$tmout_value" -le 900 ]]; then
+# bash -lc nie wczytuje /etc/bash.bashrc (tylko powłoki interaktywne), dlatego dodatkowo
+# przeglądam pliki tak jak CIS: każde TMOUT=n w nich musi mieć wartość 1-900
+tmout_pliki_zle=$(grep -Pos -- '^([^#\n\r]+)?\bTMOUT=\K\d+\b' /etc/*bashrc /etc/profile /etc/profile.d/*.sh \
+  | awk -F: '$2 > 900 || $2 < 1 {print $1 "(" $2 ")"}')
+
+if [[ -n "$tmout_pliki_zle" ]]; then
+  echo "5.4.3.2 TMOUT ustawione na złą wartość w: $(echo $tmout_pliki_zle), wymagane 1-900 s (niezgodne z wymaganiami CIS)"
+elif [[ -n "$tmout_value" && "$tmout_value" -ge 1 && "$tmout_value" -le 900 ]]; then
   echo "5.4.3.2 TMOUT = $tmout_value s (zgodne z wymaganiami CIS)"
   punkty=$((punkty + 1))
 else
@@ -299,6 +350,7 @@ else
 fi
 
 # 5.1.13 Ensure sshd LoginGraceTime is configured (Automated)
+zalecenie "5.1.13" "Ensure sshd LoginGraceTime is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -311,6 +363,7 @@ else
 fi
 
 # 1.4.2 Ensure access to bootloader config is configured
+zalecenie "1.4.2" "Ensure access to bootloader config is configured"
 
 max_punkty=$((max_punkty + 2))
 
@@ -333,6 +386,7 @@ else
 fi
 
 # 1.1.1.10 Ensure usb-storage kernel module is not available (Automated)
+zalecenie "1.1.1.10" "Ensure usb-storage kernel module is not available"
 
 max_punkty=$((max_punkty + 2))
 
@@ -368,8 +422,7 @@ else
 fi
 
 # 2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
-
-# 2.4.1.2 Ensure access to /etc/crontab is configured (Automated)
+zalecenie "2.4.1.2" "Ensure access to /etc/crontab is configured"
 max_punkty=$((max_punkty + 2))
 
 if ! dpkg-query -s cron &>/dev/null; then
@@ -395,6 +448,7 @@ else
 fi
 
 # 5.4.3.3 Ensure default user umask is configured (Automated)
+zalecenie "5.4.3.3" "Ensure default user umask is configured"
 max_punkty=$((max_punkty + 2))
 
 # umask w plikach /etc/profile.d/*.sh 
@@ -428,6 +482,7 @@ else
 fi
 
 # 1.6.2 Ensure /etc/issue is configured (Automated)
+zalecenie "1.6.2" "Ensure /etc/issue is configured"
 max_punkty=$((max_punkty + 2))
 
 issue_zle=$(grep -Psi "(\\\v|\\\r|\\\m|\\\s|\b$(grep '^ID=' /etc/os-release | cut -d= -f2 | sed -e 's/"//g')\b)" /etc/issue /usr/lib/issue.d/* /etc/issue.d/* /run/issue.d/* 2>/dev/null)
@@ -440,6 +495,7 @@ else
 fi
 
 # 5.4.1.1 Ensure password expiration is configured (Automated)
+zalecenie "5.4.1.1" "Ensure password expiration is configured"
 max_punkty=$((max_punkty + 2))
 
 # PASS_MAX_DAYS w /etc/login.defs (dla nowych kont)
@@ -460,7 +516,10 @@ if [[ -z "$shadow_zle" ]]; then
   punkty=$((punkty + 1))
 else
   echo "5.4.1.1 Konta z niezgodnym maksymalnym wiekiem hasła: $(echo $shadow_zle) (niezgodne z wymaganiami CIS)"
+fi
+
 # 1.5.7 Ensure Automatic Error Reporting is configured (Automated)
+zalecenie "1.5.7" "Ensure Automatic Error Reporting is configured"
 max_punkty=$((max_punkty + 2))
 
 if ! dpkg-query -s apport &>/dev/null; then
@@ -488,4 +547,22 @@ else
   fi
 fi
 
-echo "Wynik: $punkty/$max_punkty pkt ($((punkty * 100 / max_punkty))%)"
+zamknij_zalecenie
+
+procent=$((punkty * 100 / max_punkty))
+echo "Wynik: $punkty/$max_punkty pkt (${procent}%)"
+
+# Zapis CSV (separator ; - otwiera się poprawnie w polskim Excelu/LibreOffice)
+mkdir -p "$results_dir"
+csv_plik="$results_dir/audit_${etykieta}_$(date +%Y%m%d_%H%M%S).csv"
+{
+  echo "nr_cis;zalecenie;punkty;max_punkty;status"
+  printf '%s\n' "${csv_wiersze[@]}"
+  echo "SUMA;\"Wynik audytu ($etykieta)\";$punkty;$max_punkty;${procent}%"
+} > "$csv_plik"
+
+# Skrypt działa przez sudo - oddaję plik użytkownikowi, żeby run.sh mógł go pobrać przez scp
+if [[ -n "$SUDO_USER" ]]; then
+  chown -R "$SUDO_USER": "$results_dir"
+fi
+echo "Wyniki zapisane do: $csv_plik"
