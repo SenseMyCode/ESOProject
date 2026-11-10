@@ -1,0 +1,33 @@
+OK: Logowanie zwykłego użytkownika przez SSH
+[sudo] password for vboxuser: 
+[sudo] password for vboxuser: 
+OK: Root nie może zalogować się przez SSH (odrzucony przez PermitRootLogin)
+OK: MaxAuthTries działa poprawnie
+OK: Bezczynna sesja SSH przetrwała 50 s
+OK: Serwer zamknął nieuwierzytelnione połączenie po 60 s
+[sudo] password for vboxuser: 
+OK: Użytkownik spoza listy AllowUsers nie może zalogować się przez SSH
+OK: su z poprawnym hasłem zablokowane dla użytkownika spoza sugroup
+[sudo] password for vboxuser: 
+FAIL: Brak przekierowania portu 8080 w VirtualBox (test niemożliwy)
+[sudo] password for vboxuser: 
+OK: Polecenie wykonane przez sudo zapisało się w /var/log/sudo.log
+OK: Użytkownik nie może wyłączyć TMOUT
+OK: Zwykły użytkownik nie może odczytać grub.cfg
+[sudo] password for vboxuser: 
+OK: Próba załadowania usb-storage nie powiodła się
+OK: Działa tylko systemd-timesyncd i zegar jest zsynchronizowany
+OK: Zwykły użytkownik nie może odczytać /etc/crontab
+OK: Nowy plik użytkownika ma uprawnienia 640 (brak dostępu dla innych)
+FAIL: Nie udało się wyświetlić banera (agetty --show-issue): BLAD
+OK: Hasło użytkownika wygasa po 365 dniach
+[sudo] password for vboxuser: 
+OK: Apport jest zablokowany (masked) i nie da się go uruchomić
+[sudo] password for vboxuser: 
+
+Broadcast message from root@ESOPROJECT on pts/1 (Tue 2026-11-10 11:18:11 UTC):
+
+The system will reboot now!
+
+OK: Po restarcie accept_redirects=0, log_martians=1, tcp_syncookies=1
+Wynik: 17 OK, 2 FAIL

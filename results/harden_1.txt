@@ -1,2 +1,9 @@
 [sudo] password for vboxuser: 
-sudo: a password is required
+Created symlink /etc/systemd/system/apport.service → /dev/null.
+Rules updated
+Rules updated (v6)
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Synchronizing state of ufw.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable ufw
+Firewall is active and enabled on system startup

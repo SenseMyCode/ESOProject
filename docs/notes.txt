@@ -1,7 +1,3 @@
-Nazwa komputera jest do zmiany kolego!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
 5.1.20 Ensure sshd PermitRootLogin is disabled
 PermitRootLogin określa czy root może się zalogować przez ssh i defaultowo jest prohibit-password
 Zablokowanie wymusza uwierzytelnianie za pomocą własnych kont i dopiero uzyskiwanie uprawnień roota
